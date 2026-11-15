@@ -14,9 +14,16 @@
 <!-- ORBITSTORE_SCREENSHOTS_START -->
 ## Screenshots / Captures d'écran
 
-Real screenshots of the running app will appear here after verification. **No AI-generated UI mockups.** See [screenshot instructions](docs/screenshots/README.md).
+Screenshots of the actual running macOS application. / Captures authentiques de l'application native.
 
-Les véritables captures de l'application macOS apparaîtront ici après vérification. **Aucune maquette présentée comme une capture.**
+### Discover / Découvrir
+![OrbitStore actual Discover screen](docs/screenshots/discover.png)
+
+### Ecosystems / Écosystèmes
+![OrbitStore actual ecosystem directory](docs/screenshots/ecosystems.png)
+
+### GitHub Search / Recherche GitHub
+![OrbitStore actual GitHub search](docs/screenshots/search.png)
 <!-- ORBITSTORE_SCREENSHOTS_END -->
 
 ## English
