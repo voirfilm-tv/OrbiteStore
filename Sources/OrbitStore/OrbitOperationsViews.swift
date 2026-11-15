@@ -292,7 +292,7 @@ struct OrbitInstallPreferences: View {
                         panel.canChooseFiles=false
                         panel.canCreateDirectories=true
                         panel.prompt="Utiliser ce dossier"
-                        if panel.runModal()==.OK,let selected=panel.url {
+                        if panel.runModal() == NSApplication.ModalResponse.OK, let selected=panel.url {
                             operations.customDirectory=selected.path
                         }
                     }
