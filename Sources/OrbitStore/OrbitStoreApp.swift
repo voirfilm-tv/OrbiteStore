@@ -219,7 +219,7 @@ struct StoreWindow: View {
                         } label: {
                             HStack(spacing:13) {
                                 AuthenticAppIcon(repo:hit.full_name,name:hit.name,
-                                    branch:hit.default_branch,size:48)
+                                    branch:hit.default_branch,homepage:hit.homepage,size:48)
                                 VStack(alignment:.leading,spacing:3) {
                                     Text(hit.name).font(.headline).foregroundStyle(.primary)
                                     Text(hit.full_name).font(.caption2).foregroundStyle(.secondary)
@@ -280,7 +280,8 @@ struct StoreWindow: View {
             HStack(alignment:.top) {
                 AuthenticAppIcon(repo:entry.repo,name:entry.name,
                     installedPath:store.matches(entry).first?.path,
-                    branch:store.info[entry.repo]?.default_branch,size:59)
+                    branch:store.info[entry.repo]?.default_branch,
+                    homepage:store.info[entry.repo]?.homepage,size:59)
                 Spacer()
                 if !store.matches(entry).isEmpty {
                     Image(systemName:"checkmark.circle.fill").foregroundStyle(.green)
@@ -402,7 +403,8 @@ struct StoreWindow: View {
                     HStack(spacing:15) {
                         AuthenticAppIcon(repo:entry.repo,name:entry.name,
                             installedPath:store.matches(entry).first?.path,
-                            branch:store.info[entry.repo]?.default_branch,size:44)
+                            branch:store.info[entry.repo]?.default_branch,
+                    homepage:store.info[entry.repo]?.homepage,size:44)
                         VStack(alignment:.leading,spacing:4) {
                             Text(entry.name).font(.headline)
                             Text("Installée : \(store.matches(entry).first?.version ?? "?")  ·  GitHub : \(store.releases[entry.repo]?.tag_name ?? "non vérifiée")")
@@ -434,7 +436,8 @@ struct CatalogDetails: View {
             HStack(alignment:.top,spacing:18) {
                 AuthenticAppIcon(repo:entry.repo,name:entry.name,
                     installedPath:store.matches(entry).first?.path,
-                    branch:store.info[entry.repo]?.default_branch,size:94)
+                    branch:store.info[entry.repo]?.default_branch,
+                    homepage:store.info[entry.repo]?.homepage,size:94)
                 VStack(alignment:.leading,spacing:6) {
                     Text(entry.name).font(.largeTitle.bold())
                     Text(store.info[entry.repo]?.description ?? entry.repo).foregroundStyle(.secondary)
