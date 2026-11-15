@@ -74,6 +74,15 @@ struct RepositoryInfo: Codable {
     let default_branch: String?
     let homepage: String?
     let archived: Bool?
+    let forks_count: Int?
+    let language: String?
+    let updated_at: String?
+    let open_issues_count: Int?
+    let license: LicenseInfo?
+    struct LicenseInfo: Codable {
+        let spdx_id: String?
+        let name: String?
+    }
 }
 
 struct ReleaseAsset: Decodable, Identifiable {
@@ -88,6 +97,8 @@ struct ReleaseInfo: Decodable {
     let assets: [ReleaseAsset]
     let prerelease: Bool?
     let draft: Bool?
+    let body: String?
+    let published_at: String?
 }
 
 struct MacApp: Identifiable, Hashable {
@@ -473,6 +484,22 @@ final class StoreModel: ObservableObject {
             guard let score = score(asset) else { return nil }
             return (asset, score)
         }.sorted { $0.1 > $1.1 }.first?.0
+    }
+
+    // Installer service: obtain a package without opening Finder or executing it.
+    // The caller must perform macOS validation before placing the .app.
+    func acquirePackage(_ entry: CatalogApp) async -> URL? {
+        if releaseAvailability[entry.repo] == nil {
+            await checkDownloadAvailability(entry)
+        }
+        guard case .ready = releaseAvailability[entry.repo],
+              let release=releases[entry.repo] else {
+            errors[entry.repo]=StoreError.missingMacAsset.localizedDescription
+            return nil
+        }
+        if let existing=downloadedFile(for:entry) { return existing }
+        await download(entry,release:release,revealAfterDownload:false)
+        return downloadedFile(for:entry)
     }
 
     func installCandidate(_ entry: CatalogApp) async {
