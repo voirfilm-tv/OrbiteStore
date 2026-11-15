@@ -5,5 +5,8 @@ let package = Package(
     name: "OrbitStore",
     platforms: [.macOS(.v13)],
     products: [.executable(name: "OrbitStore", targets: ["OrbitStore"])],
-    targets: [.executableTarget(name: "OrbitStore")]
+    targets: [
+        .executableTarget(name: "OrbitStore"),
+        .testTarget(name: "OrbitStoreTests", dependencies: ["OrbitStore"])
+    ]
 )
