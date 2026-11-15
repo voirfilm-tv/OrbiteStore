@@ -307,6 +307,11 @@ struct AuthenticAppIcon: View {
 struct ExtensionBrowser: View {
     let ecosystem: Ecosystem
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var store: StoreModel
+    @EnvironmentObject private var operations: OrbitOperations
+    @State private var installPlugin: PluginRecord?
+    @State private var installVault: URL?
+    @State private var showInstallWarning=false
     @State private var records: [PluginRecord] = []
     @State private var loading = true
     @State private var error: String?
@@ -395,6 +400,27 @@ struct ExtensionBrowser: View {
                                 if let url = URL(string: item.url), url.scheme == "https" {
                                     Button("Source") { NSWorkspace.shared.open(url) }.buttonStyle(.bordered)
                                 }
+                                if ecosystem.id == "obsidian",
+                                   item.source == "Registre officiel Obsidian",
+                                   let app = store.installed.first(where: { $0.name.localizedCaseInsensitiveContains("Obsidian") }),
+                                   app.version != "?" {
+                                    Button("Installer…") {
+                                        let panel=NSOpenPanel()
+                                        panel.canChooseFiles=false
+                                        panel.canChooseDirectories=true
+                                        panel.prompt="Sélectionner un coffre Obsidian"
+                                        if panel.runModal() == NSApplication.ModalResponse.OK,
+                                           let url=panel.url {
+                                            installVault=url
+                                            installPlugin=item
+                                            showInstallWarning=true
+                                        }
+                                    }.buttonStyle(.borderedProminent)
+                                    if let status=operations.pluginStatus["obsidian:\(item.id)"] {
+                                        Text(status).font(.caption2).foregroundStyle(.secondary)
+                                            .frame(maxWidth:190,alignment:.leading)
+                                    }
+                                }
                             }
                             .padding(12)
                             .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
@@ -409,7 +435,18 @@ struct ExtensionBrowser: View {
             Text(ecosystem.id == "jellyfin" ? "Les plugins Jellyfin concernent le serveur, pas le lecteur macOS." : "Les dépôts GitHub communautaires ne constituent pas des extensions officiellement certifiées.")
                 .font(.caption2).foregroundStyle(.secondary)
         }
-        .padding(24).frame(width: 790, height: 660)
+        .padding(24).frame(width: 860, height: 690)
+        .alert("Installer une extension communautaire ?",isPresented:$showInstallWarning) {
+            Button("Installer dans ce coffre") {
+                if let plugin=installPlugin,let vault=installVault,
+                   let app=store.installed.first(where:{$0.name.localizedCaseInsensitiveContains("Obsidian")}) {
+                    operations.installObsidianPlugin(plugin,vault:vault,installedVersion:app.version)
+                }
+            }
+            Button("Annuler",role:.cancel) {}
+        } message: {
+            Text("Le code JavaScript de cette extension s'exécutera dans Obsidian une fois activé. OrbitStore vérifie son manifeste et la version minimale, mais n'audite pas sa sécurité. L'activation reste manuelle.")
+        }
         .task(id: ecosystem.id) { await reload() }
     }
 
