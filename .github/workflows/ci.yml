@@ -1,11 +1,6 @@
 name: OrbitStore CI
 on:
   pull_request:
-    paths:
-      - "Sources/**"
-      - "Package.swift"
-      - "scripts/**"
-      - ".github/workflows/ci.yml"
   push:
     branches: [main]
     paths:

@@ -1,14 +1,9 @@
 name: Capture authentic macOS screenshots
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/capture-screenshots.yml"
-      - "scripts/capture-screenshots.sh"
-      - "scripts/window-id.swift"
 permissions:
   contents: write
+  pull-requests: write
 jobs:
   screenshots:
     runs-on: macos-15
@@ -19,7 +14,9 @@ jobs:
         run: bash scripts/build-dmg.sh
       - name: Capture real OrbitStore app windows
         run: bash scripts/capture-screenshots.sh
-      - name: Publish authentic screenshots in repository README
+      - name: Publish authentic screenshots on reviewable branch
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -49,5 +46,16 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add README.md docs/screenshots/discover.png docs/screenshots/ecosystems.png docs/screenshots/search.png
-          git commit -m "docs: publish genuine OrbitStore screenshots [skip ci]"
-          git push origin "HEAD:$GITHUB_REF_NAME"
+          if git diff --cached --quiet; then
+            echo "Screenshots unchanged. No Pull Request needed."
+            exit 0
+          fi
+          BRANCH="docs/real-screenshots-$GITHUB_RUN_ID"
+          git checkout -b "$BRANCH"
+          git commit -m "docs: refresh authentic OrbitStore UI screenshots"
+          git push origin "$BRANCH"
+          if ! gh pr create --title "docs: refresh real OrbitStore screenshots" \
+              --body "Actual SwiftUI macOS window captures. Review visual accuracy and privacy before merging." \
+              --head "$BRANCH" --base main; then
+            echo "Screenshots saved to branch $BRANCH. Create the PR manually if GitHub Actions cannot create PRs."
+          fi
