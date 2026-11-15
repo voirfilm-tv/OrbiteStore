@@ -16,7 +16,7 @@
 <!-- ORBITSTORE_SCREENSHOTS_START -->
 ## Screenshots / Captures d'écran
 
-Screenshots captured from earlier running alpha versions (UI may differ from 0.5.0). / Captures authentiques d'anciennes versions alpha (l'interface peut différer de 0.5.0).
+Screenshots captured from earlier running alpha versions (UI may differ from 0.6.0). / Captures authentiques d'anciennes versions alpha (l'interface peut différer de 0.6.0).
 
 ### Discover / Découvrir
 ![OrbitStore actual Discover screen](docs/screenshots/discover.png)
@@ -35,9 +35,9 @@ Screenshots captured from earlier running alpha versions (UI may differ from 0.5
 
 ### About
 
-OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It brings together a curated GitHub software catalog, live repository search, installed-app discovery, extensions and GitHub releases. This is an **early alpha (v0.5.0)**, not yet a complete package manager.
+OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It brings together a curated GitHub software catalog, live repository search, installed-app discovery, extensions and GitHub releases. This is an **early alpha (v0.6.0)**, not yet a complete package manager.
 
-### Implemented in v0.5.0
+### Current capabilities in v0.6.0
 
 - Native catalog: Discover, Installed, Ecosystems, Updates and expanded categories, including **Games**.
 - Live GitHub repository search and GitHub star counts (**popularity, not user reviews or a security rating**).
@@ -48,10 +48,19 @@ OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It b
 - Optional extension discovery notifications for newly detected applications.
 
 
+### New in 0.6.0 alpha — Apps worth discovering everywhere
+
+- **170 editorial Mac app, game and service discoveries in 16 categories**, covering familiar productivity, office, creative, gaming, media, networking, privacy, security and accessibility choices beyond GitHub Releases.
+- **124 scoped Alternatives** covering 16 uses, searchable by the software you want to replace and filtered by usage and source; results are rotated across categories for real breadth.
+- **40 self-hosted services**, with useful everyday tools separated from advanced infrastructure.
+- **Better authentic app icons:** a daily bounded GitHub-tree scan discovers the publisher's actual icon file. Verified direct paths include SuperTuxKart, OBS Studio, Joplin, Krita, Maccy, Rectangle, draw.io, Upscayl and AppFlowy. Cached icons can supersede older low-quality guesses.
+- **Expanded index:** wider GitHub discovery across categories, genre filters for games, and relevance ranking not confused with raw repository star counts.
+- **Transparent installation sources:** external games and apps link to their actual Steam, Mac App Store, web or publisher pages. OrbitStore only offers a built-in install action when a macOS release asset exists and passes the local checks.
+
 ### New in 0.5.0 alpha — A friendlier Mac store
 
 - **New Discover design:** richer, more welcoming native SwiftUI hero, visible category shortcuts, horizontal editor picks, and denser cards with real repository icons whenever found.
-- **Alternatives:** curated Mac packages such as ArtCraft PhotoCraft, VectorCraft, FilmCraft, PdfCraft, Limusic, darktable and other free/independent alternatives. Comparisons are descriptive, not claims of full feature parity. Alpha projects are marked as experimental, and the collection only links directly to Mac apps confirmed in the index.
+- **Alternatives:** curated Mac packages such as ArtCraft PhotoCraft, VectorCraft, FilmCraft, PdfCraft, Limusic, darktable and other free/independent alternatives. Comparisons are descriptive, not claims of full feature parity. Alpha projects are marked as experimental, while the newer v0.6.0 directory also labels external publisher and web options transparently.
 - **Self-hosted:** Immich, Jellyfin, Paperless-ngx, Home Assistant, Navidrome, Mealie, Actual Budget and more. The public view favors everyday-use services; Developer Mode reveals administrator-focused stacks such as Coolify and Portainer. These are **web/server deployments**, not fake DMG installations.
 - **Clear installation feedback:** clicking Installer immediately confirms the queued action, surfaces progress and errors in a persistent bottom activity strip, and keeps an installation status inside the app detail sheet.
 - **Automatic DMG fallback:** if a user-initiated silent copy is unavailable (Gatekeeper, unsigned bundle, permissions or ambiguous package), OrbitStore opens the downloaded DMG in Finder when doing so is safe, and explains the remaining steps. It never disables Gatekeeper or silently runs unsigned apps.
@@ -137,7 +146,7 @@ OrbitStore now includes a **first safety-gated installer** and a redesigned nati
 
 ### Download and build
 
-[Download the experimental v0.3.1 DMG](https://github.com/voirfilm-tv/OrbiteStore/releases/tag/v0.5.0)
+[Download the experimental v0.6.0 DMG](https://github.com/voirfilm-tv/OrbiteStore/releases/tag/v0.6.0)
 
 Build from source on macOS 13+ with the free Xcode Command Line Tools:
 
@@ -148,7 +157,7 @@ swift build -c release
 bash scripts/build-dmg.sh
 ~~~
 
-Output: dist/OrbitStore-0.4.0-unsigned.dmg. Do **not** disable Gatekeeper globally.
+Output: dist/OrbitStore-0.6.0-unsigned.dmg. Do **not** disable Gatekeeper globally.
 
 ### Contribute
 
@@ -166,7 +175,7 @@ Start with the [contributing guide](CONTRIBUTING.md), [open tasks](https://githu
 
 OrbitStore est une **application native SwiftUI pour macOS 13+**, développée en open source. Elle permet de découvrir des projets GitHub, consulter des dépôts en direct, retrouver les logiciels installés sur le Mac et explorer leurs extensions.
 
-**Version actuelle : alpha 0.5.0.** Il ne s'agit pas encore d'un gestionnaire d'installation universel.
+**Version actuelle : alpha 0.6.0.** Il ne s'agit pas encore d'un gestionnaire d'installation universel.
 
 **Déjà disponible :** catalogue grand public par défaut, mode développeur facultatif, mise à jour d'OrbitStore avec contrôle SHA-256, catégories dont **Jeux**, recherche GitHub réelle, nombre d'étoiles GitHub (popularité uniquement), inventaire des applications installées y compris propriétaires, consultation interne de catalogues d'extensions, icônes authentiques quand elles sont disponibles, vérification de releases et téléchargement de certains paquets.
 
