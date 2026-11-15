@@ -32,6 +32,7 @@ capture() {
   sleep 2
 }
 capture discover.png "Découvrir" ""
+capture installed.png "Installées" ""
 capture ecosystems.png "Écosystèmes" ""
 capture search.png "Découvrir" "obs"
-echo "Three authentic OrbitStore window captures validated."
+echo "Four authentic OrbitStore window captures validated."
