@@ -51,7 +51,6 @@ enum MarketplaceHTTP {
         var parts = URLComponents(string: "https://api.github.com/search/repositories")!
         parts.queryItems = [
             URLQueryItem(name: "q", value: "\(query) in:name,description,readme archived:false"),
-            URLQueryItem(name: "sort", value: "best-match"),
             URLQueryItem(name: "per_page", value: String(limit))
         ]
         guard let url = parts.url else { throw MarketplaceNetworkError.malformed }
