@@ -49,3 +49,13 @@ Aucun contournement de Gatekeeper ; les packages sont téléchargés sans être 
 3. Normaliser l'identité des applications (bundle ID, signatures, provenance) avant toute mise à jour automatique.
 4. Ajouter les versions hôtes exigées par les plugins et des indicateurs « Compatible / Incompatible / Inconnu ».
 5. Ajouter la mise à jour automatique avec rollback seulement pour les paquets dont la sécurité et la provenance sont vérifiables.
+
+
+## Version 0.2.0 — novembre 2026
+
+- Recherche GitHub en temps réel (API publique ; limitation de requêtes possible), avec fiches intégrées.
+- Navigation interne des extensions OBS / Blender / VS Code (dépôts GitHub communautaires, compatibilité non vérifiée), et catalogues officiels Obsidian et Jellyfin.
+- Icônes réelles des applications installées et tentatives depuis le README ou le site officiel du projet ; monogramme neutre sinon.
+- Nouvelles catégories dont Jeux, Graphisme, Éducation, Audio & musique, Internet, Accessibilité.
+- Nouvelle installation détectée et suggestions notifiées quand les notifications sont autorisées et l'application fonctionne.
+- Pas d'installation automatique d'extensions ni de notarisation Apple. Les étoiles GitHub ne sont pas des avis utilisateurs.

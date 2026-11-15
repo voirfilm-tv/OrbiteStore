@@ -20,21 +20,21 @@ jobs:
         run: bash scripts/build-dmg.sh
       - name: Verify package
         run: |
-          test -s dist/OrbitStore-0.1.0-unsigned.dmg
+          test -s dist/OrbitStore-0.2.0-unsigned.dmg
           codesign --verify -v dist/staging/OrbitStore.app
-          hdiutil verify dist/OrbitStore-0.1.0-unsigned.dmg
+          hdiutil verify dist/OrbitStore-0.2.0-unsigned.dmg
       - name: Publish private GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG=v0.1.0
+          TAG=v0.2.0
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/OrbitStore-0.1.0-unsigned.dmg dist/SHA256SUMS.txt --clobber
+            gh release upload "$TAG" dist/OrbitStore-0.2.0-unsigned.dmg dist/SHA256SUMS.txt --clobber
           else
-            gh release create "$TAG" dist/OrbitStore-0.1.0-unsigned.dmg dist/SHA256SUMS.txt \
+            gh release create "$TAG" dist/OrbitStore-0.2.0-unsigned.dmg dist/SHA256SUMS.txt \
               --target "$GITHUB_SHA" \
-              --title "OrbitStore 0.1.0 - macOS" \
-              --notes "Version de prévisualisation privée macOS 13+. Signature ad hoc, NON notarisée par Apple. Installation sous responsabilité de l’utilisateur." \
+              --title "OrbitStore 0.2.0 - macOS" \
+              --notes "Version privée 0.2 : recherche GitHub intégrée, extensions consultables dans OrbitStore, catégories Jeux/Audio/Graphisme, icônes authentiques lorsque disponibles. Signature ad hoc, non notarisée par Apple." \
               --prerelease
           fi
           gh release view "$TAG" --json url,assets
