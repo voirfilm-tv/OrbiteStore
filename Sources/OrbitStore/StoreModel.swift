@@ -86,6 +86,7 @@ struct ReleaseInfo: Decodable {
     let html_url: String
     let assets: [ReleaseAsset]
     let prerelease: Bool?
+    let draft: Bool?
 }
 
 struct MacApp: Identifiable, Hashable {
@@ -130,13 +131,24 @@ enum StoreError: LocalizedError {
     case badResponse
     case missingMacAsset
     case integrityCheck
+    case rateLimited
+    case httpStatus(Int)
     var errorDescription: String? {
         switch self {
-        case .badResponse: return "Réponse réseau invalide"
-        case .missingMacAsset: return "Aucun paquet macOS adapté n'a été identifié"
-        case .integrityCheck: return "L'empreinte du fichier téléchargé ne correspond pas"
+        case .badResponse: return "La réponse du serveur est illisible."
+        case .missingMacAsset: return "Ce dépôt ne fournit pas de paquet macOS identifié pour ce Mac."
+        case .integrityCheck: return "Le fichier téléchargé ne correspond pas à son empreinte SHA-256."
+        case .rateLimited: return "GitHub limite temporairement les requêtes. Réessaie plus tard."
+        case .httpStatus(let code): return "Impossible de consulter les releases GitHub (HTTP \(code))."
         }
     }
+}
+
+enum MacReleaseAvailability {
+    case checking
+    case ready(tag: String, prerelease: Bool)
+    case unavailable(String)
+    case failed(String)
 }
 
 @MainActor
@@ -144,6 +156,8 @@ final class StoreModel: ObservableObject {
     @Published var installed: [MacApp] = []
     @Published var info: [String: RepositoryInfo] = [:]
     @Published var releases: [String: ReleaseInfo] = [:]
+    @Published var releaseAvailability: [String: MacReleaseAvailability] = [:]
+    @Published var downloading: Set<String> = []
     @Published var extensionCount: [String:Int] = [:]
     @Published var busy = false
     @Published var status = "Prêt"
@@ -323,55 +337,106 @@ final class StoreModel: ObservableObject {
         return isNewer(r.tag_name,than:installedVersion)
     }
 
-    func installCandidate(_ entry:CatalogApp) async {
-        status = "Vérification de la version…"
+    // GitHub /releases/latest deliberately omits pre-releases. Use the actual
+    // release list, find a macOS artifact, and don't promise a download until
+    // the package has been identified for this Mac.
+    func checkDownloadAvailability(_ entry: CatalogApp, force: Bool = false) async {
+        if !force && releaseAvailability[entry.repo] != nil { return }
+        releaseAvailability[entry.repo] = .checking
+        errors.removeValue(forKey:entry.repo)
         do {
-            let release: ReleaseInfo
-            if let existing = releases[entry.repo] { release = existing }
-            else {
-                let (data,response) = try await github("repos/" + entry.repo + "/releases/latest")
-                guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw StoreError.badResponse }
-                release = try decoder.decode(ReleaseInfo.self,from:data)
-                releases[entry.repo] = release
+            let (data, response) = try await github("repos/" + entry.repo + "/releases?per_page=15")
+            guard let http = response as? HTTPURLResponse else { throw StoreError.badResponse }
+            if http.statusCode == 403 || http.statusCode == 429 { throw StoreError.rateLimited }
+            guard http.statusCode == 200 else { throw StoreError.httpStatus(http.statusCode) }
+            let found = try decoder.decode([ReleaseInfo].self, from:data)
+            if let match = found.first(where: { $0.draft != true && suitableMacAsset(for: $0) != nil }) {
+                releases[entry.repo] = match
+                releaseAvailability[entry.repo] = .ready(tag:match.tag_name,prerelease:match.prerelease == true)
+            } else {
+                releases.removeValue(forKey:entry.repo)
+                releaseAvailability[entry.repo] = .unavailable(
+                    "Aucun paquet macOS adapté n'est publié dans les releases GitHub consultées. Ce dépôt peut contenir uniquement du code source."
+                )
             }
-            await download(entry,release:release)
         } catch {
-            errors[entry.repo] = error.localizedDescription
-            status = "Téléchargement impossible"
+            releases.removeValue(forKey:entry.repo)
+            releaseAvailability[entry.repo] = .failed(error.localizedDescription)
         }
     }
 
-    private func download(_ app:CatalogApp,release:ReleaseInfo) async {
-        let candidates = release.assets.filter {
-            let n = $0.name.lowercased()
-            return (n.hasSuffix(".dmg") || n.hasSuffix(".zip") || n.hasSuffix(".pkg"))
-                && !n.contains("windows") && !n.contains("win32") && !n.contains("linux")
-        }
+    // A generic .zip can contain sources or another OS binary. Never assume
+    // it's a macOS application unless the asset name indicates macOS.
+    private func suitableMacAsset(for release: ReleaseInfo) -> ReleaseAsset? {
         let isArm = ProcessInfo.processInfo.machineHardwareName.contains("arm")
-        let matching = candidates.filter { asset in
+        func score(_ asset: ReleaseAsset) -> Int? {
             let n = asset.name.lowercased()
-            if isArm { return !n.contains("x86_64") && !n.contains("intel") && !n.contains("amd64") }
-            return !n.contains("arm64") && !n.contains("aarch64")
+            guard !n.contains("windows"), !n.contains("win32"),
+                  !n.contains("linux"), !n.contains("android"),
+                  !n.contains("source"), !n.contains("src-"),
+                  !n.contains("symbols"), !n.contains("debug") else { return nil }
+            let macHint = n.contains("mac") || n.contains("darwin") || n.contains("osx")
+            let typeScore: Int
+            if n.hasSuffix(".dmg") { typeScore = 80 }
+            else if n.hasSuffix(".pkg") { typeScore = 70 }
+            else if n.hasSuffix(".zip") && macHint { typeScore = 50 }
+            else { return nil }
+            if isArm && (n.contains("x86_64") || n.contains("x64") || n.contains("intel") || n.contains("amd64")) &&
+               !n.contains("universal") { return nil }
+            if !isArm && (n.contains("arm64") || n.contains("aarch64") || n.contains("apple-silicon")) &&
+               !n.contains("universal") { return nil }
+            let native = isArm ? (n.contains("arm64") || n.contains("aarch64")) :
+                                 (n.contains("x86_64") || n.contains("intel"))
+            return typeScore + (native ? 20 : 0) + (n.contains("universal") ? 10 : 0) + (macHint ? 5 : 0)
         }
-        guard let chosen = matching.first(where:{ $0.name.lowercased().hasSuffix(".dmg") }) ?? matching.first,
+        return release.assets.compactMap { asset -> (ReleaseAsset, Int)? in
+            guard let score = score(asset) else { return nil }
+            return (asset, score)
+        }.sorted { $0.1 > $1.1 }.first?.0
+    }
+
+    func installCandidate(_ entry: CatalogApp) async {
+        if releaseAvailability[entry.repo] == nil {
+            await checkDownloadAvailability(entry)
+        }
+        guard case .ready = releaseAvailability[entry.repo],
+              let release = releases[entry.repo] else {
+            status = "Aucun téléchargement macOS vérifié pour ce dépôt."
+            return
+        }
+        await download(entry,release:release)
+    }
+
+    private func download(_ app: CatalogApp, release: ReleaseInfo) async {
+        guard let chosen = suitableMacAsset(for:release),
               let url = URL(string:chosen.browser_download_url),
               url.scheme == "https", url.host == "github.com" else {
             errors[app.repo] = StoreError.missingMacAsset.localizedDescription
             return
         }
+        guard !downloading.contains(app.repo) else { return }
+        downloading.insert(app.repo)
+        defer { downloading.remove(app.repo) }
+        errors.removeValue(forKey:app.repo)
         do {
             status = "Téléchargement de \(app.name)…"
             let (temporary,response) = try await URLSession.shared.download(from:url)
-            guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw StoreError.badResponse }
+            guard let http = response as? HTTPURLResponse else { throw StoreError.badResponse }
+            guard http.statusCode == 200 else { throw StoreError.httpStatus(http.statusCode) }
             if let digest = chosen.digest, digest.hasPrefix("sha256:") {
                 let data = try Data(contentsOf:temporary)
                 let actual = SHA256.hash(data:data).map { String(format:"%02x",$0) }.joined()
-                guard actual.lowercased() == String(digest.dropFirst(7)).lowercased() else { throw StoreError.integrityCheck }
+                guard actual.lowercased() == String(digest.dropFirst(7)).lowercased() else {
+                    throw StoreError.integrityCheck
+                }
             }
-            let folder = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads/OrbitStore",isDirectory:true)
+            let folder = FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Downloads/OrbitStore",isDirectory:true)
             try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
             let target = folder.appendingPathComponent(chosen.name)
-            if FileManager.default.fileExists(atPath:target.path) { try FileManager.default.removeItem(at:target) }
+            if FileManager.default.fileExists(atPath:target.path) {
+                try FileManager.default.removeItem(at:target)
+            }
             try FileManager.default.moveItem(at:temporary,to:target)
             downloaded[app.repo] = target.path
             status = "Fichier enregistré dans Téléchargements/OrbitStore"
