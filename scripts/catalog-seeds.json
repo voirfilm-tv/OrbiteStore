@@ -503,5 +503,65 @@
     "repo": "siyuan-note/siyuan",
     "name": "SiYuan",
     "category": "Productivité"
+  },
+  {
+    "repo": "storytold/photocraft",
+    "name": "PhotoCraft",
+    "category": "Graphisme"
+  },
+  {
+    "repo": "storytold/vectorcraft",
+    "name": "VectorCraft",
+    "category": "Graphisme"
+  },
+  {
+    "repo": "storytold/filmcraft",
+    "name": "FilmCraft",
+    "category": "Création"
+  },
+  {
+    "repo": "storytold/pdfcraft",
+    "name": "PdfCraft",
+    "category": "Bureautique"
+  },
+  {
+    "repo": "SimoHypers/limusic",
+    "name": "Limusic",
+    "category": "Audio & musique"
+  },
+  {
+    "repo": "actualbudget/actual",
+    "name": "Actual Budget",
+    "category": "Productivité"
+  },
+  {
+    "repo": "widelands/widelands",
+    "name": "Widelands",
+    "category": "Jeux"
+  },
+  {
+    "repo": "ddnet/ddnet",
+    "name": "DDNet",
+    "category": "Jeux"
+  },
+  {
+    "repo": "Beyond-All-Reason/Beyond-All-Reason",
+    "name": "Beyond All Reason",
+    "category": "Jeux"
+  },
+  {
+    "repo": "sauerbraten/sauerbraten",
+    "name": "Cube 2: Sauerbraten",
+    "category": "Jeux"
+  },
+  {
+    "repo": "osgameclones/osgameclones",
+    "name": "Game projects",
+    "category": "Développement"
+  },
+  {
+    "repo": "OpenLoco/OpenLoco",
+    "name": "OpenLoco",
+    "category": "Jeux"
   }
 ]
