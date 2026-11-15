@@ -513,10 +513,14 @@ struct OrbitAlternativesPage:View {
                 }
             }
             if entries.isEmpty {
-                ContentUnavailableView("Aucune alternative trouvée",
-                    systemImage:"magnifyingglass",
-                    description:Text("Essaie un nom de logiciel, un usage ou une autre source."))
-                    .frame(maxWidth:.infinity,minHeight:140)
+                VStack(spacing:10) {
+                    Image(systemName:"magnifyingglass").font(.title)
+                        .foregroundStyle(.secondary)
+                    Text("Aucune alternative trouvée").font(.headline)
+                    Text("Essaie un nom de logiciel, un usage ou une autre source.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth:.infinity,minHeight:140)
             }
             if entries.count>limit {
                 HStack {
