@@ -278,10 +278,9 @@ struct StoreWindow: View {
     private func appTile(_ entry:CatalogApp)->some View {
         VStack(alignment:.leading,spacing:12) {
             HStack(alignment:.top) {
-                Image(systemName:entry.icon)
-                    .font(.system(size:28,weight:.medium))
-                    .frame(width:59,height:59)
-                    .background(LinearGradient(colors:[.indigo.opacity(0.26),.purple.opacity(0.16)],startPoint:.topLeading,endPoint:.bottomTrailing),in:RoundedRectangle(cornerRadius:15))
+                AuthenticAppIcon(repo:entry.repo,name:entry.name,
+                    installedPath:store.matches(entry).first?.path,
+                    branch:store.info[entry.repo]?.default_branch,size:59)
                 Spacer()
                 if !store.matches(entry).isEmpty {
                     Image(systemName:"checkmark.circle.fill").foregroundStyle(.green)
@@ -365,9 +364,8 @@ struct StoreWindow: View {
                         Text(ecosystem.name).font(.headline)
                         Text(ecosystem.description).font(.caption).foregroundStyle(.secondary)
                         Spacer()
-                        Button("Voir le catalogue") {
-                            if let url=URL(string:ecosystem.url) { NSWorkspace.shared.open(url) }
-                        }.buttonStyle(.bordered)
+                        Button("Explorer les extensions") { selectedEcosystem=ecosystem }
+                            .buttonStyle(.borderedProminent)
                     }
                     .frame(maxWidth:.infinity,minHeight:155,alignment:.topLeading)
                     .padding(17)
@@ -402,8 +400,9 @@ struct StoreWindow: View {
             } else {
                 ForEach(entries) { entry in
                     HStack(spacing:15) {
-                        Image(systemName:entry.icon).font(.title2).frame(width:44,height:44)
-                            .background(.indigo.opacity(0.12),in:RoundedRectangle(cornerRadius:11))
+                        AuthenticAppIcon(repo:entry.repo,name:entry.name,
+                            installedPath:store.matches(entry).first?.path,
+                            branch:store.info[entry.repo]?.default_branch,size:44)
                         VStack(alignment:.leading,spacing:4) {
                             Text(entry.name).font(.headline)
                             Text("Installée : \(store.matches(entry).first?.version ?? "?")  ·  GitHub : \(store.releases[entry.repo]?.tag_name ?? "non vérifiée")")
@@ -428,13 +427,14 @@ struct StoreWindow: View {
 struct CatalogDetails: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var store: StoreModel
+    @State private var chosenEcosystem: Ecosystem?
     let entry: CatalogApp
     var body: some View {
         VStack(alignment:.leading,spacing:18) {
             HStack(alignment:.top,spacing:18) {
-                Image(systemName:entry.icon).font(.system(size:40))
-                    .frame(width:94,height:94)
-                    .background(.indigo.opacity(0.16),in:RoundedRectangle(cornerRadius:21))
+                AuthenticAppIcon(repo:entry.repo,name:entry.name,
+                    installedPath:store.matches(entry).first?.path,
+                    branch:store.info[entry.repo]?.default_branch,size:94)
                 VStack(alignment:.leading,spacing:6) {
                     Text(entry.name).font(.largeTitle.bold())
                     Text(store.info[entry.repo]?.description ?? entry.repo).foregroundStyle(.secondary)
@@ -447,6 +447,15 @@ struct CatalogDetails: View {
                     .buttonStyle(.plain).foregroundStyle(.secondary)
             }
             Divider()
+            if let ecosystem=Ecosystems.matches(entry.name).first {
+                HStack {
+                    Image(systemName:"puzzlepiece.extension.fill").foregroundStyle(.indigo)
+                    Text("Extensions pour \(ecosystem.name)").font(.headline)
+                    Spacer()
+                    Button("Explorer dans OrbitStore") { chosenEcosystem=ecosystem }
+                        .buttonStyle(.borderedProminent)
+                }
+            }
             HStack {
                 Label(entry.category,systemImage:"square.grid.2x2")
                 Spacer()
@@ -476,13 +485,15 @@ struct CatalogDetails: View {
             }
         }
         .padding(27)
-        .frame(width:680,height:400)
+        .frame(width:680,height:450)
+        .sheet(item:$chosenEcosystem) { ExtensionBrowser(ecosystem:$0) }
     }
 }
 
 struct InstalledDetails: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var store: StoreModel
+    @State private var chosenEcosystem: Ecosystem?
     let app: MacApp
     var body: some View {
         VStack(alignment:.leading,spacing:18) {
@@ -518,9 +529,8 @@ struct InstalledDetails: View {
                             }
                         }
                         Spacer()
-                        Button("Explorer") {
-                            if let url=URL(string:e.url) { NSWorkspace.shared.open(url) }
-                        }.buttonStyle(.borderedProminent)
+                        Button("Explorer dans OrbitStore") { chosenEcosystem=e }
+                            .buttonStyle(.borderedProminent)
                     }
                     .padding(14)
                     .background(.quaternary.opacity(0.3),in:RoundedRectangle(cornerRadius:12))
@@ -535,6 +545,7 @@ struct InstalledDetails: View {
         }
         .padding(26)
         .frame(width:650,height:440)
+        .sheet(item:$chosenEcosystem) { ExtensionBrowser(ecosystem:$0) }
     }
 }
 
