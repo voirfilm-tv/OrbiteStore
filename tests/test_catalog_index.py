@@ -22,6 +22,19 @@ class AssetClassificationTests(unittest.TestCase):
                      "Game-macos-x86_64.zip"):
             self.assertTrue(catalog.is_macos_asset(name), name)
 
+    def test_rejects_other_operating_system_pkgs_and_debug_symbols(self):
+        self.assertFalse(catalog.is_macos_asset("Sunshine-FreeBSD-15.1-amd64.pkg"))
+        self.assertFalse(catalog.is_macos_asset("tool.app.dSYM.zip"))
+        self.assertFalse(catalog.is_macos_asset("cdda-osx-terminal-only.dmg"))
+
+    def test_consumer_vs_developer_audience(self):
+        self.assertEqual(catalog.classify_audience(
+            {"full_name":"iina/iina","name":"iina","description":"Video player"}, "Multimédia","IINA.dmg"),"consumer")
+        self.assertEqual(catalog.classify_audience(
+            {"full_name":"unknown/commandtool","name":"Command tool","description":"CLI tool for developers"}, "Utilitaires","tool-macos.dmg"),"developer")
+        self.assertEqual(catalog.classify_audience(
+            {"full_name":"godotengine/godot","name":"Godot","description":"Game engine"}, "Développement","Godot-macos.zip"),"developer")
+
     def test_generic_zip_not_verified(self):
         self.assertFalse(catalog.is_macos_asset("release.zip"))
 
