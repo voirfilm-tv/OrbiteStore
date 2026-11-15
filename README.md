@@ -32,9 +32,9 @@ Screenshots of the actual running macOS application. / Captures authentiques de 
 
 ### About
 
-OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It brings together a curated GitHub software catalog, live repository search, installed-app discovery, extensions and GitHub releases. This is an **early alpha (v0.2.1)**, not yet a complete package manager.
+OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It brings together a curated GitHub software catalog, live repository search, installed-app discovery, extensions and GitHub releases. This is an **early alpha (v0.2.2)**, not yet a complete package manager.
 
-### Implemented in v0.2.1
+### Implemented in v0.2.2
 
 - Native catalog: Discover, Installed, Ecosystems, Updates and expanded categories, including **Games**.
 - Live GitHub repository search and GitHub star counts (**popularity, not user reviews or a security rating**).
@@ -45,12 +45,22 @@ OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It b
 - Optional extension discovery notifications for newly detected applications.
 
 
-### 0.2.1 · GitHub releases compatibility fix
+### 0.2.2 · GitHub releases compatibility fix
 
 - A repository detail now checks actual release assets before displaying a macOS download button.
 - GitHub pre-releases are supported and explicitly labeled as preview downloads; the `/releases/latest` endpoint omits them.
 - Projects without a recognized macOS package show a clear, non-blocking explanation instead of a misleading network error.
 - Files named as Windows/Linux packages, source archives or incompatible CPU architectures are excluded from suggested macOS downloads.
+
+
+### 0.2.2 · Installed app detection, filters and post-download guidance
+
+- **Installed OrbitStore detection:** matches the canonical macOS bundle identifier `fr.orbitstore.mac`, even though the GitHub repository is named `OrbiteStore`. The inventory also checks LaunchServices and running application bundles outside standard Applications folders.
+- **Native filters:** category browsing, live GitHub repository results, installed apps, plugin ecosystems, updates, and the extensions browser now support context-specific filtering and sorting.
+- **Search navigation:** the Installed, Ecosystems and Updates pages remain accessible while the search field has text, and search filters those pages locally.
+- **Download handoff:** a requested DMG download opens its disk image in Finder. After dragging the app into Applications, select **Vérifier l'installation**. No package installer or unknown executable is automatically run.
+- **Update checks:** pre-release support for recognized apps; unattended downloads are restricted to bundle identities explicitly verified in code.
+- **Safety:** a previously downloaded old version is no longer presented as the current release.
 
 ### Current limitations
 
@@ -62,7 +72,7 @@ OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It b
 
 ### Download and build
 
-[Download the experimental v0.2.1 DMG](https://github.com/voirfilm-tv/OrbiteStore/releases/tag/v0.2.1)
+[Download the experimental v0.2.2 DMG](https://github.com/voirfilm-tv/OrbiteStore/releases/tag/v0.2.2)
 
 Build from source on macOS 13+ with the free Xcode Command Line Tools:
 
@@ -73,7 +83,7 @@ swift build -c release
 bash scripts/build-dmg.sh
 ~~~
 
-Output: dist/OrbitStore-0.2.1-unsigned.dmg. Do **not** disable Gatekeeper globally.
+Output: dist/OrbitStore-0.2.2-unsigned.dmg. Do **not** disable Gatekeeper globally.
 
 ### Contribute
 
@@ -91,7 +101,7 @@ Start with the [contributing guide](CONTRIBUTING.md), [open tasks](https://githu
 
 OrbitStore est une **application native SwiftUI pour macOS 13+**, développée en open source. Elle permet de découvrir des projets GitHub, consulter des dépôts en direct, retrouver les logiciels installés sur le Mac et explorer leurs extensions.
 
-**Version actuelle : alpha 0.2.1.** Il ne s'agit pas encore d'un gestionnaire d'installation universel.
+**Version actuelle : alpha 0.2.2.** Il ne s'agit pas encore d'un gestionnaire d'installation universel.
 
 **Déjà disponible :** catalogue et catégories dont **Jeux**, recherche GitHub réelle, nombre d'étoiles GitHub (popularité uniquement), inventaire des applications installées y compris propriétaires, consultation interne de catalogues d'extensions, icônes authentiques quand elles sont disponibles, vérification de releases et téléchargement de certains paquets.
 

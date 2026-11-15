@@ -24,3 +24,7 @@ OrbitStore scans selected Applications directories and gathers app name, bundle 
 A secure installer would need: discovery → verified identity → macOS/architecture compatibility → trusted download → integrity/signature check → explicit consent → install/update → recovery.
 
 Never equate a GitHub search match with confirmed plugin compatibility or binary safety. Keep API usage bounded, status messages accurate, and the interface accessible.
+
+### Discovery and download UX v0.2.2
+
+Known application bundle IDs are prioritized over mutable display names. OrbitStore recognizes `fr.orbitstore.mac` for `voirfilm-tv/OrbiteStore`. The app inventory includes LaunchServices registrations and running macOS application bundles while excluding mounted DMG volumes. A user-requested DMG download can open the disk image through NSWorkspace; it does not install the app or bypass Gatekeeper. The user must drag the app into Applications and can rescan from the catalog detail.

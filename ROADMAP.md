@@ -5,7 +5,9 @@ OrbitStore is in **alpha**. Only checked items below are implemented.
 ## Available in v0.2.0 / Livré
 - [x] Native SwiftUI storefront and macOS categories, including **Games / Jeux**
 - [x] Live GitHub search with in-app results and GitHub stars
-- [x] Installed-application discovery including proprietary apps
+- [x] Installed-application discovery including proprietary apps, running apps and LaunchServices lookup for OrbitStore
+- [x] Category, GitHub search, installed, ecosystem, extension and update filters
+- [x] Guided DMG handoff (opens Finder disk image after explicit download, no silent install)
 - [x] Extension browsing for Obsidian/Jellyfin plus GitHub-associated plugins for other ecosystems
 - [x] Best-effort authentic icons with neutral fallback
 - [x] GitHub release checks and downloads, SHA-256 when provided

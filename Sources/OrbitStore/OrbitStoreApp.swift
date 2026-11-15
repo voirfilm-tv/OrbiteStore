@@ -896,9 +896,9 @@ struct PreferencesPanel: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Mises à jour") {
-                Toggle("Télécharger automatiquement les nouvelles versions reconnues",
+                Toggle("Télécharger automatiquement si l'identité de l'application est vérifiée",
                     isOn:Binding(get:{store.autoDownload},set:{store.setAutoDownload($0)}))
-                Text("Les téléchargements sont conservés dans ~/Downloads/OrbitStore. Aucune installation ou exécution automatique.")
+                Text("Seuls les logiciels dont le bundle ID est explicitement vérifié peuvent être téléchargés sans nouvelle action. Aucune installation ou exécution automatique.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Sécurité") {
