@@ -46,6 +46,14 @@ class AssetClassificationTests(unittest.TestCase):
             {"full_name":"storytold/photocraft","name":"PhotoCraft","description":"photo editor"},
             "Graphisme","photocraft-macos.dmg"),("consumer",))
 
+    def test_negative_index_cache_expires(self):
+        import datetime as dt
+        fresh=(catalog.NOW-dt.timedelta(days=2)).isoformat()
+        stale=(catalog.NOW-dt.timedelta(days=12)).isoformat()
+        self.assertTrue(catalog.is_recent_rejection(fresh))
+        self.assertFalse(catalog.is_recent_rejection(stale))
+        self.assertFalse(catalog.is_recent_rejection("not-a-date"))
+
     def test_generic_zip_not_verified(self):
         self.assertFalse(catalog.is_macos_asset("release.zip"))
 
