@@ -57,6 +57,36 @@ class AssetClassificationTests(unittest.TestCase):
     def test_generic_zip_not_verified(self):
         self.assertFalse(catalog.is_macos_asset("release.zip"))
 
+    def test_icon_finds_real_game_brand_in_data_directory(self):
+        self.assertGreater(catalog.score_icon_path(
+            "data/supertuxkart_512.png", "SuperTuxKart"), 100)
+        self.assertEqual(catalog.ICON_PATH_HINTS["supertuxkart/stk-code"],
+                         "data/supertuxkart_512.png")
+
+    def test_icon_rejects_badges_and_ui_controls(self):
+        self.assertEqual(catalog.score_icon_path(
+            "docs/screenshots/supertuxkart_512.png", "SuperTuxKart"), -1)
+        self.assertEqual(catalog.score_icon_path(
+            "data/gui/icons/back.png", "SuperTuxKart"), -1)
+
+    def test_genres_come_from_gameplay_not_stars(self):
+        self.assertEqual(catalog.game_genre(
+            "warzone2100/warzone2100", "Jeux"), "Stratégie")
+        self.assertEqual(catalog.game_genre(
+            "supertuxkart/stk-code", "Jeux"), "Course")
+        self.assertEqual(catalog.game_genre(
+            "drwhut/tabletop-club", "Jeux"), "Jeux de plateau")
+        self.assertIsNone(catalog.game_genre(
+            "appflowy-io/appflowy", "Bureautique"))
+
+    def test_office_candidates_are_curated_without_bypassing_macos_gate(self):
+        import json
+        seeds=json.loads(catalog.SEEDS.read_text(encoding="utf-8"))
+        names={item["repo"].lower():item["category"] for item in seeds}
+        self.assertEqual(names["jgraph/drawio-desktop"],"Bureautique")
+        self.assertEqual(names["obsidianmd/obsidian-releases"],"Bureautique")
+        self.assertFalse(catalog.is_macos_asset("office-source.zip"))
+
     def test_no_frameworks_in_games(self):
         repo={"name":"Engine X","description":"A game engine","topics":["game-engine"]}
         self.assertEqual(catalog.classify("Jeux",repo,False),"Développement")
