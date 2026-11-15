@@ -29,7 +29,7 @@ struct OrbitSelfUpdateCard: View {
             }
             Text(updater.status)
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(updater.availableVersion == nil ? .secondary : .green)
+                .foregroundStyle(updater.availableVersion == nil ? Color.secondary : Color.green)
             if let version=updater.availableVersion {
                 HStack {
                     Label("Nouvelle version \(version)",systemImage:"checkmark.circle.fill")
