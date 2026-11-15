@@ -55,7 +55,7 @@ enum MarketplaceHTTP {
             URLQueryItem(name: "per_page", value: String(limit))
         ]
         guard let url = parts.url else { throw MarketplaceNetworkError.malformed }
-        return try JSONDecoder().decode(SearchPayload.self, from: fetch(url)).items
+        return try JSONDecoder().decode(SearchPayload.self, from: try await fetch(url)).items
     }
 
     static func pluginSearch(_ q: String) async throws -> [PluginRecord] {
@@ -126,7 +126,7 @@ enum PluginDirectory {
         case "obsidian":
             let url = URL(string: "https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugins.json")!
             struct Item: Decodable { let id: String; let name: String; let author: String?; let description: String?; let repo: String }
-            let items = try JSONDecoder().decode([Item].self, from: MarketplaceHTTP.fetch(url))
+            let items = try JSONDecoder().decode([Item].self, from: try await MarketplaceHTTP.fetch(url))
             return items.map {
                 PluginRecord(id: $0.id, name: $0.name, summary: $0.description ?? "Par \($0.author ?? "la communauté")",
                              url: "https://github.com/\($0.repo)", compatibility: "Vérifier la version installée", source: "Registre officiel Obsidian", stars: nil)
@@ -302,8 +302,8 @@ struct ExtensionBrowser: View {
                     Button("Réessayer") { Task { await reload() } }
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if filtered.isEmpty {
-                ContentUnavailableView("Aucun résultat", systemImage: "puzzlepiece.extension", description: Text("Essaie une autre recherche."))
-                    .frame(maxHeight: .infinity)
+                VStack(spacing: 12) { Image(systemName: "puzzlepiece.extension").font(.largeTitle); Text("Aucun résultat"); Text("Essaie une autre recherche.").font(.caption) }
+                    .foregroundStyle(.secondary).frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 8) {
