@@ -5,18 +5,21 @@ import AppKit
 struct OrbitStoreApp: App {
     @StateObject private var store = StoreModel()
     @StateObject private var operations = OrbitOperations()
+    @StateObject private var updater = OrbitSelfUpdater()
     var body: some Scene {
         WindowGroup {
             StoreWindow()
                 .environmentObject(store)
                 .environmentObject(operations)
+                .environmentObject(updater)
                 .frame(minWidth:960,minHeight:620)
                 .onAppear { store.start() }
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
         Settings {
-            PreferencesPanel().environmentObject(store).environmentObject(operations).frame(width:620)
+            PreferencesPanel().environmentObject(store).environmentObject(operations)
+                .environmentObject(updater).frame(width:680)
         }
         MenuBarExtra("OrbitStore", systemImage:"square.stack.3d.up.fill") {
             Button("Analyser les applications") { store.scan() }
@@ -38,6 +41,7 @@ private enum ScreenshotLaunchArguments {
 struct StoreWindow: View {
     @EnvironmentObject private var store: StoreModel
     @EnvironmentObject private var operations: OrbitOperations
+    @EnvironmentObject private var updater: OrbitSelfUpdater
     @State private var section = ScreenshotLaunchArguments.value("--screenshot-section", fallback: "Découvrir")
     @State private var search = ScreenshotLaunchArguments.value("--screenshot-search", fallback: "")
     @State private var selected: CatalogApp? = Inventory.catalog.first {
@@ -271,6 +275,7 @@ struct StoreWindow: View {
             operations.offerManagedUpdates(store:store)
         }
         .onChange(of:section) { _ in catalogPageSize=60 }
+        .task { await updater.check() }
         .onChange(of:store.developerMode) { newValue in
             if !newValue && ["Développement","Lanceurs & émulation"].contains(section) {
                 section="Découvrir"
@@ -1010,6 +1015,7 @@ struct InstalledDetails: View {
 struct PreferencesPanel: View {
     @EnvironmentObject private var store: StoreModel
     @EnvironmentObject private var operations: OrbitOperations
+    @EnvironmentObject private var updater: OrbitSelfUpdater
     var body: some View {
         Form {
             Section("Expérience OrbitStore") {
@@ -1028,6 +1034,12 @@ struct PreferencesPanel: View {
                     isOn:Binding(get:{store.notificationsEnabled},set:{store.setNotifications($0)}))
                 Text("L'inventaire et les alertes fonctionnent uniquement lorsque OrbitStore est ouvert. Des noms d'applications peuvent être utilisés dans des recherches GitHub.")
                     .font(.caption).foregroundStyle(.secondary)
+            }
+            Section("Mise à jour d'OrbitStore") {
+                OrbitSelfUpdateCard(compact:true)
+                    .environmentObject(updater)
+                Toggle("Inclure les préversions d'OrbitStore",
+                       isOn:$updater.includePrereleases)
             }
             Section("Mises à jour") {
                 Toggle("Installer automatiquement les mises à jour des applications gérées et vérifiées",
