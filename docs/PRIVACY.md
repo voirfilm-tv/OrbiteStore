@@ -1,6 +1,6 @@
 # Privacy / Confidentialité
 
-This documents the reviewed **v0.2.2 source**, not an independent audit.
+This documents the reviewed **v0.3.0 source**, not an independent audit.
 
 ### On-device
 
@@ -28,3 +28,13 @@ Disable extension notifications in Preferences. Quit OrbitStore to stop periodic
 In addition to standard Applications directories, OrbitStore also reads app bundle URLs from macOS running applications, its own bundle, and LaunchServices' registered OrbitStore bundle identifier. The inventory is local, but an installed app name may be submitted to GitHub when the user requests extension discovery or has enabled related notifications. OrbitStore does not require Screen Recording or Full Disk Access for these checks.
 
 **FR :** La recherche d'applications s'étend aux logiciels actuellement ouverts et à l'identifiant macOS d'OrbitStore ; une application simplement ouverte depuis un DMG monté n'est pas considérée comme installée.
+
+### Lifecycle features added in v0.3.0 / Gestion des logiciels
+
+- OrbitStore stores a local operation log (up to 250 entries), install receipts (repository, bundle ID, signing Team ID, install path and date), local preferences and a copy of the previous .app bundle when replacing it.
+- Default locations: `~/Library/Application Support/OrbitStore/history.json`, `receipts.json` and `Backups/`. Downloaded packages use `~/Downloads/OrbitStore/` unless cleaned after installation.
+- Archive unpacking and code-signature checks run locally. No proprietary installed-app list is uploaded to an OrbitStore server.
+- Source lookup can query Homebrew Cask API; user-initiated Obsidian plugin installation accesses the upstream release and writes into a user-selected Obsidian vault.
+- Daily update digest is opt-in, only while the app is open; notification preferences are stored locally.
+
+**FR :** L'historique, les reçus d'installation et les sauvegardes des anciennes applications sont locaux. Les extensions Obsidian peuvent exécuter du JavaScript ; le coffre est choisi manuellement, l'activation n'est jamais automatique.

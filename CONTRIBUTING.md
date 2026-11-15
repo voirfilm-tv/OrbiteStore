@@ -18,17 +18,22 @@ Requires macOS 13+, Swift 5.9+ and Xcode Command Line Tools. No paid Apple Devel
 git clone https://github.com/voirfilm-tv/OrbiteStore.git
 cd OrbiteStore
 swift build -c debug
+swift test
 swift build -c release
 bash scripts/build-dmg.sh
 ~~~
 
-There is no unit-test target yet; CI verifies that Swift code builds.
+Run `swift test` to execute the core policy unit tests. CI verifies the macOS Swift build and tests.
 
 ## Architecture
 
 - Sources/OrbitStore/OrbitStoreApp.swift: SwiftUI screens and navigation.
 - Sources/OrbitStore/StoreModel.swift: catalog, installed apps, GitHub releases, downloads, notifications.
 - Sources/OrbitStore/MarketplaceDiscovery.swift: GitHub search, ecosystems and icon resolution.
+- Sources/OrbitStore/OrbitOperations.swift: installer, verification, local history, rollback and sources.
+- Sources/OrbitStore/OrbitCatalogDetails.swift: premium app details.
+- Sources/OrbitStore/OrbitPluginInstaller.swift: Obsidian plugin adapter.
+- Tests/: policy checks.
 - scripts/: DMG packaging and version metadata.
 - docs/: architecture, privacy and authentic screenshot guide.
 

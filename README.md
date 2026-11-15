@@ -35,9 +35,9 @@ Screenshots of the actual running macOS application. / Captures authentiques de 
 
 ### About
 
-OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It brings together a curated GitHub software catalog, live repository search, installed-app discovery, extensions and GitHub releases. This is an **early alpha (v0.2.2)**, not yet a complete package manager.
+OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It brings together a curated GitHub software catalog, live repository search, installed-app discovery, extensions and GitHub releases. This is an **early alpha (v0.3.0)**, not yet a complete package manager.
 
-### Implemented in v0.2.2
+### Implemented in v0.3.0
 
 - Native catalog: Discover, Installed, Ecosystems, Updates and expanded categories, including **Games**.
 - Live GitHub repository search and GitHub star counts (**popularity, not user reviews or a security rating**).
@@ -48,7 +48,24 @@ OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It b
 - Optional extension discovery notifications for newly detected applications.
 
 
-### 0.2.2 · GitHub releases compatibility fix
+### New in 0.3.0 alpha — lifecycle management
+
+OrbitStore now includes a **first safety-gated installer** and a redesigned native product detail page:
+
+- **One-click installation queue** for supported DMG/ZIP archives containing a single .app. Choose /Applications, ~/Applications or a custom user-writable directory. Packages requiring authorization or rejected by Gatekeeper stay manual; .pkg installers are never run silently.
+- **OrbitVerify preflight:** read-only DMG extraction, cautious ZIP entry validation, code-signature verification, Gatekeeper assessment and expected bundle ID where known. A GitHub star count is never treated as trust.
+- **Install packs:** curated bulk collections and a custom multi-selection queue, with each app checked separately.
+- **Managed updates:** opt-in for apps previously installed by OrbitStore and recorded with a signing Team ID and bundle ID. Running apps, changed publishers, unverifiable packages and permission errors stop automatic replacement.
+- **Rollback:** OrbitStore preserves a prior app bundle when it safely replaces an app signed by the same Team ID. Rollback does not restore any changed user data.
+- **OrbitDoctor:** inspect installed app signatures, Gatekeeper assessment, executable architectures and advertised Sparkle update feed.
+- **Uninstall:** with confirmation, move allowed user apps into Trash. Settings, caches and personal data remain intact; leftover paths can be inspected without deletion.
+- **Operation history** stored locally, **release notes**, per-version ignore controls, GitHub/Homebrew Cask/Sparkle source references and opt-in limited update notifications.
+- **Extension support:** GitHub/official-registry discovery; a first opt-in Obsidian adapter downloads official-registry plugin assets into a user-selected vault after checking manifest ID and minimum app version. JavaScript plugins are NOT audited or enabled automatically. OBS, Jellyfin and other ecosystems remain discovery-only.
+- **New editorial detail sheet** with genuine project icon, GitHub metrics, installation state, changelog, sources, related apps, extensions, and unified action buttons.
+
+**This is not a universal fully automatic installer.** Source-only repositories, PKG installers, multiple apps inside one DMG, unsigned/non-Gatekeeper-approved apps, restricted folders and unverified extension formats require manual handling. No paid Apple Developer certificate is used; OrbitStore's own DMG remains ad-hoc signed and unnotarized. An unsigned pre-release such as OrbitStore itself cannot silently self-install through the security-gated engine.
+
+### 0.2.1 · GitHub releases compatibility fix
 
 - A repository detail now checks actual release assets before displaying a macOS download button.
 - GitHub pre-releases are supported and explicitly labeled as preview downloads; the `/releases/latest` endpoint omits them.
@@ -67,15 +84,16 @@ OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It b
 
 ### Current limitations
 
-- **No universal automatic installer, updater, plugin installer, or rollback.** Downloading a package does not install it.
-- GitHub search can reach API limits and can return repositories without a usable macOS build.
-- Third-party plugins discovered by keywords are **not necessarily compatible** with the host app or your installed version.
-- Download safety checks are incomplete: signatures and notarization of third-party binaries are not universally verified.
-- Distributed DMGs are **ad-hoc signed, not Apple-notarized**. macOS Gatekeeper may require explicit user action.
+- **Not yet a universal installer/updater:** automatic installation covers only a narrow, Gatekeeper-accepted .app subset, and only when the destination is writable. PKG and unverified binaries require manual steps.
+- The DMG distributed here uses **ad-hoc signing, not Apple notarization**, so Gatekeeper may prompt users. Do not disable system protections globally.
+- Installation/rollback and extension adapters are alpha features; no end-to-end compatibility certification exists across all macOS versions and CPU architectures.
+- GitHub rate limits and source-only repositories can prevent discovery or installation.
+- Community plugins can execute arbitrary code in their host app. Obsidian's official registry inclusion does **not** imply security auditing.
+- The local history and backup files may consume space; updates never guarantee rollback of application-created user data.
 
 ### Download and build
 
-[Download the experimental v0.2.2 DMG](https://github.com/voirfilm-tv/OrbiteStore/releases/tag/v0.2.2)
+[Download the experimental v0.3.0 DMG](https://github.com/voirfilm-tv/OrbiteStore/releases/tag/v0.3.0)
 
 Build from source on macOS 13+ with the free Xcode Command Line Tools:
 
@@ -86,7 +104,7 @@ swift build -c release
 bash scripts/build-dmg.sh
 ~~~
 
-Output: dist/OrbitStore-0.2.2-unsigned.dmg. Do **not** disable Gatekeeper globally.
+Output: dist/OrbitStore-0.3.0-unsigned.dmg. Do **not** disable Gatekeeper globally.
 
 ### Contribute
 
@@ -104,11 +122,11 @@ Start with the [contributing guide](CONTRIBUTING.md), [open tasks](https://githu
 
 OrbitStore est une **application native SwiftUI pour macOS 13+**, développée en open source. Elle permet de découvrir des projets GitHub, consulter des dépôts en direct, retrouver les logiciels installés sur le Mac et explorer leurs extensions.
 
-**Version actuelle : alpha 0.2.2.** Il ne s'agit pas encore d'un gestionnaire d'installation universel.
+**Version actuelle : alpha 0.3.0.** Il ne s'agit pas encore d'un gestionnaire d'installation universel.
 
 **Déjà disponible :** catalogue et catégories dont **Jeux**, recherche GitHub réelle, nombre d'étoiles GitHub (popularité uniquement), inventaire des applications installées y compris propriétaires, consultation interne de catalogues d'extensions, icônes authentiques quand elles sont disponibles, vérification de releases et téléchargement de certains paquets.
 
-**Ce qui reste à développer :** installation et mise à jour automatiques fiables, vérification systématique de la provenance des paquets, compatibilité précise des plugins, tests utilisateurs et couverture plus large du catalogue. Les DMG ne sont pas notarisés par Apple.
+**Limites :** les PKG, applications non signées ou refusées par Gatekeeper et dossiers exigeant des privilèges restent manuels. La gestion des plugins hors Obsidian est principalement exploratoire ; la compatibilité exacte doit être vérifiée. Les mises à jour automatiques ne concernent que des applications précédemment gérées avec identité de signature enregistrée. Les DMG d'OrbitStore ne sont pas notarisés par Apple.
 
 Pour compiler sans payer Apple, installez Xcode ou les Command Line Tools et utilisez les commandes ci-dessus.
 

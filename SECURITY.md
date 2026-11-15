@@ -1,6 +1,6 @@
 # Security / Sécurité
 
-**OrbitStore v0.2.0 is alpha software.** It discovers and downloads potentially untrusted GitHub files. It must not be treated as a trusted binary registry or a security-reviewed installer.
+**OrbitStore v0.3.0 is alpha software.** It discovers and downloads potentially untrusted GitHub files. It must not be treated as a trusted binary registry or a security-reviewed installer.
 
 ## Vulnerability reports / Signalement
 
@@ -12,15 +12,18 @@ When GitHub Private Vulnerability Reporting is enabled, use **Security → Repor
 
 ## Known limitations / Limites
 
-- Downloaded artifacts are **not installed or run automatically**.
+- Only selected `.app` bundles inside DMG/ZIP files may be silently copied when the user requests installation (or explicitly opts into signed-app managed updates). The installer checks `codesign --verify --deep --strict` and `spctl --assess --type execute`; a failure requires manual handling.
+- PKG installers are not silently executed, administrator privileges are not bypassed and Gatekeeper is never disabled.
+- The `/Applications` directory must be writable by the current user; otherwise choose `~/Applications` or an allowed custom folder.
 - GitHub asset digests are verified when present, but many assets do not supply a digest.
-- Third-party code signatures, Developer ID and Apple notarization are **not yet systematically verified**.
+- A successful Gatekeeper assessment does not establish that the developer's code is safe. Not all GitHub release assets expose publisher metadata, and Homebrew/Sparkle are discovery sources only.
+- Same-bundle update replacement additionally checks signing Team ID; cached previous bundles are used only for limited app rollback, not user data recovery.
 - A GitHub repository may be malicious or unrelated. Stars are **not** safety ratings.
-- Plugins found via keyword search may be incompatible with the installed host version.
+- Plugins found via keyword search may be incompatible with the installed host version. The Obsidian adapter fetches JavaScript from upstream releases following explicit consent; inclusion in the official plugin registry is not a security audit. Enable plugins inside Obsidian only after evaluating their source.
 - Never recommend disabling Gatekeeper for all apps.
 
 ## Supported versions
 
-0.2.x: alpha only; no promised security support response time. Earlier pre-releases may not receive patches.
+0.3.x: alpha only; no promised security support response time. Earlier pre-releases may not receive patches.
 
 For a report, include affected version, reproduction steps and impact privately, never access tokens or personal data.
