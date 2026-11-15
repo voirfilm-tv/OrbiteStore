@@ -48,7 +48,9 @@ struct StoreWindow: View {
     @StateObject private var discovery = GitHubDiscovery()
     @State private var selectedEcosystem: Ecosystem?
     @State private var catalogPresence = "Toutes"
-    @State private var catalogSort = "Sélection"
+    @State private var catalogSort = "Popularité"
+    @State private var catalogMacFilter = "Paquets macOS"
+    @State private var catalogPageSize = 60
     @State private var remoteFilter = "Tous"
     @State private var remoteSort = "Pertinence"
     @State private var installedScope = "Toutes"
@@ -70,10 +72,13 @@ struct StoreWindow: View {
         }
     }
     private var filtered: [CatalogApp] {
-        var items=Inventory.catalog.filter { item in
+        var items=store.catalog.filter { item in
             (search.isEmpty ? (section == "Découvrir" || section == "Tout" || section == item.category) : true)
             && (search.isEmpty || item.name.localizedCaseInsensitiveContains(search)
                 || item.repo.localizedCaseInsensitiveContains(search))
+        }
+        if catalogMacFilter == "Paquets macOS" && !store.indexedApps.isEmpty {
+            items=items.filter { store.catalogIsVerifiedMac($0) }
         }
         if catalogPresence == "Installées" {
             items=items.filter { !store.matches($0).isEmpty }
@@ -82,9 +87,10 @@ struct StoreWindow: View {
         }
         if catalogSort == "Nom A–Z" {
             items.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-        } else if catalogSort == "★ GitHub" {
-            items.sort { (store.info[$0.repo]?.stargazers_count ?? -1) >
-                         (store.info[$1.repo]?.stargazers_count ?? -1) }
+        } else if catalogSort == "Popularité" {
+            items.sort { store.catalogStars($0) > store.catalogStars($1) }
+        } else if catalogSort == "Activité récente" {
+            items.sort { store.catalogUpdatedAt($0) > store.catalogUpdatedAt($1) }
         }
         return items
     }
@@ -157,7 +163,7 @@ struct StoreWindow: View {
     }
 
     private var visibleUpdates: [CatalogApp] {
-        var items=Inventory.catalog.filter {
+        var items=store.catalog.filter {
             !store.matches($0).isEmpty &&
             (search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) ||
              $0.repo.localizedCaseInsensitiveContains(search))
@@ -262,6 +268,7 @@ struct StoreWindow: View {
             operations.notifyDigest(store:store)
             operations.offerManagedUpdates(store:store)
         }
+        .onChange(of:section) { _ in catalogPageSize=60 }
         .task(id:section + "|" + search) {
             guard remoteSearchSection else { return }
             try? await Task.sleep(nanoseconds: 550_000_000)
@@ -296,12 +303,37 @@ struct StoreWindow: View {
             VStack(alignment:.leading,spacing:5) {
                 Text(section == "Découvrir" ? "Découvrir" : section)
                     .font(.system(size:34,weight:.bold,design:.rounded))
-                Text("Applications, dépôts GitHub et écosystèmes réunis dans une seule bibliothèque.")
+                Text(section == "Jeux"
+                     ? "Jeux open source avec des releases Mac : pas de moteurs de jeu déguisés en jeux."
+                     : "Des logiciels indexés automatiquement à partir des releases GitHub.")
                     .foregroundStyle(.secondary)
             }
-            banner
+            if section == "Découvrir" || section == "Tout" { banner }
+            if section == "Jeux" {
+                HStack(spacing:14) {
+                    Image(systemName:"gamecontroller.fill").font(.title).foregroundStyle(.indigo)
+                    VStack(alignment:.leading,spacing:5) {
+                        Text("Jeux jouables sur Mac").font(.headline)
+                        Text("Les émulateurs et lanceurs sont classés à part. La compatibilité et la sécurité sont vérifiées avant installation.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("Voir les lanceurs") { section="Lanceurs & émulation" }
+                        .buttonStyle(.bordered)
+                }
+                .padding(15).background(Color.indigo.opacity(0.07),in:RoundedRectangle(cornerRadius:14))
+            }
             HStack {
-                Label("Sélection GitHub",systemImage:"star.fill").font(.title2.bold())
+                Label(store.indexStatus,systemImage:"externaldrive.badge.wifi")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                if store.indexLoading { ProgressView().controlSize(.small) }
+                Button("Actualiser") { Task { await store.refresh() } }
+                    .buttonStyle(.bordered)
+                    .disabled(store.busy || store.indexLoading)
+            }
+            HStack {
+                Label(section == "Jeux" ? "Jeux pour macOS" : "Applications à découvrir",systemImage:"star.fill").font(.title2.bold())
                 Spacer()
                 Text("\(filtered.count) projets").font(.subheadline).foregroundStyle(.secondary)
             }
@@ -314,19 +346,33 @@ struct StoreWindow: View {
                     Text("Non installées").tag("Non installées")
                 }.pickerStyle(.menu).frame(width:160)
                 Picker("Trier",selection:$catalogSort) {
-                    Text("Sélection").tag("Sélection")
+                    Text("★ Popularité").tag("Popularité")
+                    Text("Activité récente").tag("Activité récente")
                     Text("Nom A–Z").tag("Nom A–Z")
-                    Text("★ GitHub").tag("★ GitHub")
+                    Text("Sélection initiale").tag("Sélection")
+                }.pickerStyle(.menu).frame(width:170)
+                Picker("Disponibilité",selection:$catalogMacFilter) {
+                    Text("Paquets macOS").tag("Paquets macOS")
+                    Text("Tous les projets").tag("Tous")
                 }.pickerStyle(.menu).frame(width:155)
                 Spacer()
             }
             LazyVGrid(columns:columns,alignment:.leading,spacing:14) {
-                ForEach(filtered) { entry in
+                ForEach(Array(filtered.prefix(catalogPageSize))) { entry in
                     Button { selected=entry } label: { appTile(entry) }
                         .buttonStyle(.plain)
                 }
             }
-            Text("Les dépôts répertoriés ne sont pas tous des applications natives macOS. La disponibilité des binaires est vérifiée avant le téléchargement.")
+            if filtered.count > catalogPageSize {
+                HStack {
+                    Spacer()
+                    Button("Afficher plus (\(filtered.count - catalogPageSize) restants)") {
+                        catalogPageSize += 60
+                    }.buttonStyle(.borderedProminent)
+                    Spacer()
+                }
+            }
+            Text("Un fichier macOS dans une release ne certifie ni sa sécurité ni sa compatibilité. OrbitStore vérifie les protections macOS au moment de l'installation.")
                 .font(.caption).foregroundStyle(.secondary)
         }
     }
@@ -468,14 +514,18 @@ struct StoreWindow: View {
                 }
             }
             Text(entry.name).font(.headline).lineLimit(1)
-            Text(store.info[entry.repo]?.description ?? entry.repo)
+            Text(store.catalogDescription(entry))
                 .font(.caption).foregroundStyle(.secondary).lineLimit(2)
                 .frame(height:32,alignment:.topLeading)
             HStack {
                 Text(entry.category).font(.caption2).foregroundStyle(.secondary)
+                if store.catalogIsVerifiedMac(entry) {
+                    Image(systemName:"macbook").foregroundStyle(.green)
+                        .help("Une release GitHub contient un fichier macOS ; sécurité non auditée.")
+                }
                 Spacer()
-                if let stars=store.info[entry.repo]?.stargazers_count {
-                    Label(stars.formatted(),systemImage:"star.fill").font(.caption2)
+                if store.catalogStars(entry)>0 {
+                    Label(store.catalogStars(entry).formatted(),systemImage:"star.fill").font(.caption2)
                 } else {
                     Text("GitHub").font(.caption2).foregroundStyle(.secondary)
                 }
@@ -708,7 +758,7 @@ struct LegacyCatalogDetails: View {
                     homepage:store.info[entry.repo]?.homepage,size:94)
                 VStack(alignment:.leading,spacing:6) {
                     Text(entry.name).font(.largeTitle.bold())
-                    Text(store.info[entry.repo]?.description ?? entry.repo).foregroundStyle(.secondary)
+                    Text(store.catalogDescription(entry)).foregroundStyle(.secondary)
                     if let stars=store.info[entry.repo]?.stargazers_count {
                         Text("★ \(stars.formatted()) étoiles GitHub")
                     }
