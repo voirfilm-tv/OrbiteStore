@@ -33,6 +33,14 @@ class AssetClassificationTests(unittest.TestCase):
         repo={"name":"Example Launcher","description":"A game launcher","topics":["game-launcher"]}
         self.assertEqual(catalog.classify("Jeux",repo,True),"Lanceurs & émulation")
 
+    def test_game_porting_tool_is_not_playable_game(self):
+        repo={"name":"NX2Apple","description":"Bring your own game to a one-click macOS app","topics":[]}
+        self.assertEqual(catalog.classify("Jeux",repo,False),"Lanceurs & émulation")
+
+    def test_game_engine_requiring_assets_is_not_a_game(self):
+        repo={"name":"VCMI","description":"Open-source engine for Heroes of Might and Magic III","topics":[]}
+        self.assertEqual(catalog.classify("Jeux",repo,False),"Lanceurs & émulation")
+
     def test_game_is_kept(self):
         repo={"name":"Great Game","description":"A beautiful turn-based strategy game","topics":["game"]}
         self.assertEqual(catalog.classify("Jeux",repo,False),"Jeux")
