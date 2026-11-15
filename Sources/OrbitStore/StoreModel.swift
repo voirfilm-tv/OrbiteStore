@@ -478,10 +478,10 @@ final class StoreModel: ObservableObject {
             status = "Aucun téléchargement macOS vérifié pour ce dépôt."
             return
         }
-        await download(entry,release:release)
+        await download(entry,release:release,revealAfterDownload:true)
     }
 
-    private func download(_ app: CatalogApp, release: ReleaseInfo) async {
+    private func download(_ app: CatalogApp, release: ReleaseInfo, revealAfterDownload: Bool = false) async {
         guard let chosen = suitableMacAsset(for:release),
               let url = URL(string:chosen.browser_download_url),
               url.scheme == "https", url.host == "github.com" else {
@@ -514,7 +514,21 @@ final class StoreModel: ObservableObject {
             try FileManager.default.moveItem(at:temporary,to:target)
             downloaded[app.repo] = target.path
             UserDefaults.standard.set(target.path,forKey:"download.\(app.repo)")
-            status = "Téléchargement terminé. Ouvre le DMG depuis la fiche pour terminer l'installation."
+            if revealAfterDownload && target.pathExtension.lowercased() == "dmg" {
+                // Mount the downloaded disk image via Finder, not the .app.
+                // No executable, installer, or elevated command is launched.
+                if NSWorkspace.shared.open(target) {
+                    status = "DMG ouvert : déplace l'application dans Applications, puis relance l'analyse."
+                } else {
+                    NSWorkspace.shared.activateFileViewerSelecting([target])
+                    status = "DMG téléchargé : ouvre-le manuellement depuis le Finder."
+                }
+            } else {
+                if revealAfterDownload {
+                    NSWorkspace.shared.activateFileViewerSelecting([target])
+                }
+                status = "Paquet téléchargé : vérifie son éditeur et installe-le depuis le Finder."
+            }
         } catch {
             errors[app.repo] = error.localizedDescription
             status = "Échec du téléchargement"
