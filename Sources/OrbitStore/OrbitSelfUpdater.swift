@@ -47,7 +47,7 @@ final class OrbitSelfUpdater: ObservableObject {
                              UserDefaults.standard.bool(forKey:"orbit.selfUpdater.prerelease")
     }
 
-    static func isNewer(_ remote:String,than local:String)->Bool {
+    nonisolated static func isNewer(_ remote:String,than local:String)->Bool {
         func components(_ value:String)->[Int] {
             let base=value.trimmingCharacters(in:.whitespacesAndNewlines)
                 .replacingOccurrences(of:"^v",with:"",options:.regularExpression)
