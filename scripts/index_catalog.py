@@ -89,6 +89,7 @@ FEATURED_REPOS = {
     "widelands/widelands":117, "endless-sky/endless-sky":115,
     "supertux/supertux":114, "freeorion/freeorion":112,
     "beyond-all-reason/beyond-all-reason":111,
+    "drwhut/tabletop-club":105, "yairm210/unciv":106,
     "hedgewars/hw":110, "openrct2/openrct2":105,
     "ddnet/ddnet":103, "ppy/osu":99,
     "iina/iina":115, "handbrake/handbrake":113,
@@ -97,6 +98,7 @@ FEATURED_REPOS = {
     "logseq/logseq":117, "zettlr/zettlr":115,
     "marktext/marktext":112, "toeverything/affine":113,
     "koodo-reader/koodo-reader":108,
+    "libresprite/libresprite":101, "upscayl/upscayl":111,
     "appflowy-io/appflowy":112, "laurent22/joplin":114,
     "standardnotes/app":110, "siyuan-note/siyuan":109,
     "storytold/photocraft":95, "storytold/vectorcraft":94,
@@ -120,6 +122,7 @@ GAME_GENRES = {
     "ppy/osu":"Rythme", "shatteredpixel/shattered-pixel-dungeon":"Rôle",
     "cleverraven/cataclysm-dda":"Rôle", "crawl/crawl":"Rôle",
     "luanti-org/luanti":"Simulation", "classicube/classicube":"Simulation",
+    "drwhut/tabletop-club":"Jeux de plateau", "yairm210/unciv":"Stratégie",
 }
 # Explicit reviewed path: unlike README badges, this is a real app icon.
 ICON_PATH_HINTS = {
@@ -335,6 +338,7 @@ def normalize_repo(entry: dict, category: str, verified_at: str, tag: str,
         "language": entry.get("language"),
         "license": (entry.get("license") or {}).get("spdx_id"),
         "homepage": entry.get("homepage") or "",
+        "default_branch": entry.get("default_branch") or "",
         "updated_at": entry.get("pushed_at") or entry.get("updated_at"),
         "release_tag": tag,
         "asset_name": asset,
