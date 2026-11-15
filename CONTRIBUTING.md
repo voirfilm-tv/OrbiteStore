@@ -59,3 +59,11 @@ Run `swift test` to execute the core policy unit tests. CI verifies the macOS Sw
 - [ ] User-facing English/French documentation updated where relevant
 
 Be constructive and follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Improve the catalog
+
+See [catalog architecture](docs/CATALOG.md). Run the Python indexing policy suite:
+
+    python3 -m unittest discover -s tests -p test_catalog_index.py -v
+
+For new games or applications, propose a source repository in scripts/catalog-seeds.json and supply a legitimate macOS release URL. The scheduled indexer checks assets before including a candidate; do not add arbitrary game engines to the Games category or copy another marketplace's data. Changes to the indexer should be validated with Python tests and GitHub Actions before merging.
