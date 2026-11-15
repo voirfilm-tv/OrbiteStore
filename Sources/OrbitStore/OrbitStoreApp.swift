@@ -61,14 +61,14 @@ struct StoreWindow: View {
     @State private var updatesSort = "A–Z"
     private let columns = [GridItem(.adaptive(minimum:218,maximum:300),spacing:14)]
     private var remoteSearchSection: Bool {
-        !["Installées","Écosystèmes","Mises à jour","Installations","Historique","Préférences"].contains(section)
+        store.developerMode && !["Installées","Écosystèmes","Mises à jour","Installations","Historique","Préférences"].contains(section)
     }
     private var searchPrompt: String {
         switch section {
         case "Installées": return "Rechercher une application installée"
         case "Écosystèmes": return "Rechercher un écosystème"
         case "Mises à jour": return "Rechercher une mise à jour"
-        default: return "Rechercher sur GitHub et OrbitStore"
+        default: return store.developerMode ? "Chercher des apps et dépôts GitHub" : "Rechercher une application macOS"
         }
     }
     private var filtered: [CatalogApp] {
@@ -194,7 +194,9 @@ struct StoreWindow: View {
                     Label("Historique",systemImage:"clock.arrow.circlepath").tag("Historique")
                 }
                 Section("Catégories") {
-                    ForEach(Inventory.categories,id:\.self) { cat in
+                    ForEach(Inventory.categories.filter {
+                        store.developerMode || !["Développement","Lanceurs & émulation"].contains($0)
+                    },id:\.self) { cat in
                         Label(cat,systemImage:icon(for:cat)).tag(cat)
                     }
                 }
@@ -269,7 +271,13 @@ struct StoreWindow: View {
             operations.offerManagedUpdates(store:store)
         }
         .onChange(of:section) { _ in catalogPageSize=60 }
-        .task(id:section + "|" + search) {
+        .onChange(of:store.developerMode) { newValue in
+            if !newValue && ["Développement","Lanceurs & émulation"].contains(section) {
+                section="Découvrir"
+            }
+            if !newValue { catalogMacFilter="Paquets macOS" }
+        }
+        .task(id:section + "|" + search + "|" + String(store.developerMode)) {
             guard remoteSearchSection else { return }
             try? await Task.sleep(nanoseconds: 550_000_000)
             guard !Task.isCancelled else { return }
@@ -305,8 +313,10 @@ struct StoreWindow: View {
                 Text(section == "Découvrir" ? "Découvrir" : section)
                     .font(.system(size:34,weight:.bold,design:.rounded))
                 Text(section == "Jeux"
-                     ? "Jeux open source avec des releases Mac : pas de moteurs de jeu déguisés en jeux."
-                     : "Des logiciels indexés automatiquement à partir des releases GitHub.")
+                     ? "Des jeux Mac prêts à télécharger, sans moteurs ou projets techniques."
+                     : store.developerMode
+                         ? "Mode développeur : logiciels, dépôts et outils techniques GitHub."
+                         : "Une sélection d'applications macOS prêtes à télécharger, pour tous.")
                     .foregroundStyle(.secondary)
             }
             if section == "Découvrir" || section == "Tout" { banner }
@@ -319,12 +329,17 @@ struct StoreWindow: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("Voir les lanceurs") { section="Lanceurs & émulation" }
+                    if store.developerMode {
+                        Button("Voir les lanceurs") { section="Lanceurs & émulation" }
+                    }
                         .buttonStyle(.bordered)
                 }
                 .padding(15).background(Color.indigo.opacity(0.07),in:RoundedRectangle(cornerRadius:14))
             }
             HStack {
+                OrbitStatusPill(text:store.developerMode ? "Mode développeur" : "Grand public",
+                                icon:store.developerMode ? "chevron.left.forwardslash.chevron.right" : "app.badge",
+                                tint:store.developerMode ? .orange : .green)
                 Label(store.indexStatus,systemImage:"externaldrive.badge.wifi")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
@@ -336,7 +351,7 @@ struct StoreWindow: View {
             HStack {
                 Label(section == "Jeux" ? "Jeux pour macOS" : "Applications à découvrir",systemImage:"star.fill").font(.title2.bold())
                 Spacer()
-                Text("\(filtered.count) projets").font(.subheadline).foregroundStyle(.secondary)
+                Text("\(filtered.count) applications").font(.subheadline).foregroundStyle(.secondary)
             }
             HStack(spacing:10) {
                 Label("Filtres",systemImage:"line.3.horizontal.decrease")
@@ -352,11 +367,30 @@ struct StoreWindow: View {
                     Text("Nom A–Z").tag("Nom A–Z")
                     Text("Sélection initiale").tag("Sélection")
                 }.pickerStyle(.menu).frame(width:170)
-                Picker("Disponibilité",selection:$catalogMacFilter) {
-                    Text("Paquets macOS").tag("Paquets macOS")
-                    Text("Tous les projets").tag("Tous")
-                }.pickerStyle(.menu).frame(width:155)
+                if store.developerMode {
+                    Picker("Disponibilité",selection:$catalogMacFilter) {
+                        Text("Paquets macOS").tag("Paquets macOS")
+                        Text("Tous les dépôts").tag("Tous")
+                    }.pickerStyle(.menu).frame(width:155)
+                }
                 Spacer()
+            }
+            if store.indexLoading && store.indexedApps.isEmpty {
+                ProgressView("Recherche des applications Mac…")
+                    .frame(maxWidth:.infinity,minHeight:140)
+            } else if filtered.isEmpty {
+                VStack(spacing:9) {
+                    Image(systemName:"app.badge").font(.system(size:35))
+                        .foregroundStyle(.secondary)
+                    Text(store.indexedApps.isEmpty ? "Catalogue indisponible" :
+                         "Aucune application correspondant aux critères")
+                        .font(.headline)
+                    Text(store.indexedApps.isEmpty
+                         ? "Connexion nécessaire pour charger les applications avec des paquets macOS vérifiés."
+                         : "Modifie la recherche ou le filtre pour afficher d'autres applications.")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }.frame(maxWidth:.infinity,minHeight:180)
             }
             LazyVGrid(columns:columns,alignment:.leading,spacing:14) {
                 ForEach(Array(filtered.prefix(catalogPageSize))) { entry in
@@ -978,6 +1012,15 @@ struct PreferencesPanel: View {
     @EnvironmentObject private var operations: OrbitOperations
     var body: some View {
         Form {
+            Section("Expérience OrbitStore") {
+                Toggle(isOn:$store.developerMode) {
+                    Label("Mode développeur",systemImage:"chevron.left.forwardslash.chevron.right")
+                }
+                Text(store.developerMode
+                     ? "Catalogue avancé : dépôts techniques, outils de programmation et recherche GitHub complète. Les dépôts sans paquet n'affichent pas de bouton Installer."
+                     : "Catalogue grand public : uniquement les applications indexées avec un paquet macOS identifié. Les outils techniques et les dépôts de code sont masqués.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             OrbitInstallPreferences()
                 .environmentObject(operations)
             Section("Surveillance") {
