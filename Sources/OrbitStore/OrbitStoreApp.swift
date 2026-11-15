@@ -172,6 +172,77 @@ struct StoreWindow: View {
         }
     }
 
+    private var searchPage: some View {
+        VStack(alignment:.leading,spacing:18) {
+            HStack(alignment:.center) {
+                VStack(alignment:.leading,spacing:5) {
+                    Text("Recherche GitHub").font(.system(size:33,weight:.bold,design:.rounded))
+                    Text("Résultats directs de GitHub et applications sélectionnées par OrbitStore.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                }
+                Spacer()
+                if discovery.loading { ProgressView().controlSize(.small) }
+                Button("Relancer") { Task { await discovery.search(search) } }
+            }
+            if !filtered.isEmpty {
+                HStack {
+                    Text("Dans OrbitStore").font(.title2.bold())
+                    Spacer()
+                    Text("\(filtered.count) applications").foregroundStyle(.secondary)
+                }
+                LazyVGrid(columns:columns,spacing:14) {
+                    ForEach(filtered) { entry in
+                        Button { selected=entry } label: { appTile(entry) }.buttonStyle(.plain)
+                    }
+                }
+            }
+            Divider()
+            HStack {
+                Text("Sur GitHub").font(.title2.bold())
+                Spacer()
+                Text("\(discovery.results.count) dépôts reçus")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if let error=discovery.error {
+                Label(error,systemImage:"exclamationmark.triangle")
+                    .foregroundStyle(.orange)
+                Text("GitHub limite les recherches anonymes. Patiente quelques minutes si nécessaire.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else if !discovery.loading && discovery.results.isEmpty {
+                Text("Aucun dépôt trouvé pour cette recherche.").foregroundStyle(.secondary)
+            } else {
+                LazyVStack(spacing:10) {
+                    ForEach(discovery.results) { hit in
+                        Button {
+                            selected=CatalogApp(repo:hit.full_name,name:hit.name,
+                                category:"Dépôts GitHub",icon:"shippingbox",aliases:[])
+                        } label: {
+                            HStack(spacing:13) {
+                                AuthenticAppIcon(repo:hit.full_name,name:hit.name,
+                                    branch:hit.default_branch,size:48)
+                                VStack(alignment:.leading,spacing:3) {
+                                    Text(hit.name).font(.headline).foregroundStyle(.primary)
+                                    Text(hit.full_name).font(.caption2).foregroundStyle(.secondary)
+                                    Text(hit.description ?? "Description non fournie")
+                                        .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                                }
+                                Spacer(minLength:12)
+                                Label(hit.stargazers_count.formatted(),systemImage:"star.fill")
+                                    .font(.caption).foregroundStyle(.secondary)
+                                Image(systemName:"chevron.right").foregroundStyle(.tertiary)
+                            }
+                            .padding(13)
+                            .background(Color(nsColor:.controlBackgroundColor),
+                                        in:RoundedRectangle(cornerRadius:14))
+                        }.buttonStyle(.plain)
+                    }
+                }
+                Text("GitHub contient aussi des bibliothèques et des dépôts sans application macOS. Aucun paquet n'est supposé compatible sans vérification.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
     private var banner: some View {
         ZStack(alignment:.leading) {
             LinearGradient(
