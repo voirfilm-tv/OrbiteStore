@@ -351,7 +351,7 @@ struct StoreWindow: View {
                 Text(section == "Découvrir" ? "Découvrir" : section)
                     .font(.system(size:34,weight:.bold,design:.rounded))
                 Text(section == "Jeux"
-                     ? "Des jeux Mac prêts à télécharger, sans moteurs ou projets techniques."
+                     ? "Jeux de stratégie, de gestion, de plateau et bien plus : sur Mac ou via leurs boutiques officielles."
                      : store.developerMode
                          ? "Mode développeur : logiciels, dépôts et outils techniques GitHub."
                          : "Une sélection d'applications macOS prêtes à télécharger, pour tous.")
@@ -391,6 +391,10 @@ struct StoreWindow: View {
                     }
                 }
                 .padding(15).background(Color.indigo.opacity(0.07),in:RoundedRectangle(cornerRadius:14))
+            }
+            if search.isEmpty && catalogPresence=="Toutes" &&
+               ["Découvrir","Tout","Jeux","Bureautique"].contains(section) {
+                OrbitSpotlightShelf(section:section,gameGenre:gameGenre)
             }
             HStack {
                 OrbitStatusPill(text:store.developerMode ? "Mode développeur" : "Grand public",
