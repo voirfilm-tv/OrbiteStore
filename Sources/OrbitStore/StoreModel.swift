@@ -225,7 +225,7 @@ final class StoreModel: ObservableObject {
         let n=name.lowercased()
         guard !["windows","win32","linux","android","freebsd","openbsd",
                 ".dsym","symbols","source","src-","terminal-only","console-only",
-                "headless","cli-only"].contains(where:n.contains) else { return false }
+                "headless","cli-only","dont-use","do-not-use"].contains(where:n.contains) else { return false }
         let mac=["macos","mac-","mac_","darwin","osx","apple-silicon",
                  ".app","universal"].contains(where:n.contains)
         if n.hasSuffix(".dmg") { return true }
@@ -245,9 +245,17 @@ final class StoreModel: ObservableObject {
         return true
     }
 
+    private func meetsKnownMinimumOS(_ repo:String)->Bool {
+        // Confirmed from the publisher's macOS build requirements.
+        let minMajor:[String:Int]=["simohypers/limusic":15]
+        guard let minimum=minMajor[repo.lowercased()] else { return true }
+        return ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= minimum
+    }
+
     private func isPublicApp(_ item:IndexedMacApp)->Bool {
         let files=item.asset_names ?? [item.asset_name]
-        guard files.contains(where:compatibleAssetName) else { return false }
+        guard meetsKnownMinimumOS(item.repo),
+              files.contains(where:compatibleAssetName) else { return false }
         if let audience=item.audience { return audience=="consumer" }
         // Older offline indexes lacked an explicit audience field.
         // Fail closed on technical project categories and descriptors.
@@ -687,14 +695,15 @@ final class StoreModel: ObservableObject {
         let isArm = ProcessInfo.processInfo.machineHardwareName.contains("arm")
         func score(_ asset: ReleaseAsset) -> Int? {
             let n = asset.name.lowercased()
-            guard !n.contains("windows"), !n.contains("win32"),
-                  !n.contains("linux"), !n.contains("android"),
-                  !n.contains("source"), !n.contains("src-"),
-                  !n.contains("symbols"), !n.contains("debug") else { return nil }
-            let macHint = n.contains("mac") || n.contains("darwin") || n.contains("osx")
+            guard !["windows","win32","linux","android","freebsd","openbsd",
+                     "source","src-","symbols","debug",".dsym","terminal-only",
+                     "console-only","headless","dont-use","do-not-use"].contains(where:n.contains)
+            else { return nil }
+            let macHint = n.contains("mac") || n.contains("darwin") ||
+                          n.contains("osx") || n.contains(".app.zip")
             let typeScore: Int
             if n.hasSuffix(".dmg") { typeScore = 80 }
-            else if n.hasSuffix(".pkg") { typeScore = 70 }
+            else if n.hasSuffix(".pkg") && macHint { typeScore = 70 }
             else if n.hasSuffix(".zip") && macHint { typeScore = 50 }
             else { return nil }
             if isArm && (n.contains("x86_64") || n.contains("x64") || n.contains("intel") || n.contains("amd64")) &&
