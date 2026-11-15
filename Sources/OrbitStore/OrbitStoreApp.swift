@@ -287,6 +287,7 @@ struct StoreWindow: View {
         case "Réseau": return "network"
         case "Utilitaires": return "wrench.and.screwdriver"
         case "Jeux": return "gamecontroller"
+        case "Lanceurs & émulation": return "arcade.stick"
         case "Audio & musique": return "music.note"
         case "Éducation": return "graduationcap"
         case "Graphisme": return "paintbrush"
