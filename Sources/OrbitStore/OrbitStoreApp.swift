@@ -805,11 +805,13 @@ struct LegacyCatalogDetails: View {
 struct InstalledDetails: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var store: StoreModel
+    @EnvironmentObject private var operations: OrbitOperations
     @State private var chosenEcosystem: Ecosystem?
     @State private var related: [PluginRecord] = []
     @State private var searchingRelated = true
     let app: MacApp
     var body: some View {
+        ScrollView {
         VStack(alignment:.leading,spacing:18) {
             HStack(spacing:16) {
                 Image(nsImage:NSWorkspace.shared.icon(forFile:app.path))
@@ -878,13 +880,24 @@ struct InstalledDetails: View {
                 Text("La compatibilité de chaque extension doit être confirmée auprès de son éditeur.")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            Spacer()
-            Button("Afficher dans le Finder") {
-                NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath:app.path)])
+            Divider()
+            OrbitDiagnosisPanel(app:app)
+                .environmentObject(store)
+                .environmentObject(operations)
+            HStack {
+                Button("Afficher dans le Finder") {
+                    NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath:app.path)])
+                }
+                Spacer()
+                Button("Ouvrir l'application") {
+                    NSWorkspace.shared.open(URL(fileURLWithPath:app.path))
+                }.buttonStyle(.borderedProminent)
             }
         }
         .padding(26)
-        .frame(width:650,height:480)
+        .frame(maxWidth:.infinity,alignment:.leading)
+        }
+        .frame(width:760,height:690)
         .sheet(item:$chosenEcosystem) { ExtensionBrowser(ecosystem:$0) }
         .task {
             if Ecosystems.matches(app.name).isEmpty {
@@ -897,23 +910,27 @@ struct InstalledDetails: View {
 
 struct PreferencesPanel: View {
     @EnvironmentObject private var store: StoreModel
+    @EnvironmentObject private var operations: OrbitOperations
     var body: some View {
         Form {
+            OrbitInstallPreferences()
+                .environmentObject(operations)
             Section("Surveillance") {
-                Toggle("Notifications d'extensions pour les nouvelles applications",
+                Toggle("Détecter de nouvelles applications et suggérer des extensions",
                     isOn:Binding(get:{store.notificationsEnabled},set:{store.setNotifications($0)}))
-                Text("La surveillance fonctionne lorsque OrbitStore est lancé. Seuls les décomptes provenant d'un registre connu déclenchent une notification chiffrée.")
+                Text("L'inventaire et les alertes fonctionnent uniquement lorsque OrbitStore est ouvert. Des noms d'applications peuvent être utilisés dans des recherches GitHub.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Mises à jour") {
-                Toggle("Télécharger automatiquement si l'identité de l'application est vérifiée",
+                Toggle("Télécharger automatiquement les mises à jour d'identité vérifiée",
                     isOn:Binding(get:{store.autoDownload},set:{store.setAutoDownload($0)}))
-                Text("Seuls les logiciels dont le bundle ID est explicitement vérifié peuvent être téléchargés sans nouvelle action. Aucune installation ou exécution automatique.")
+                Text("Ce réglage n'exécute aucun installateur. Une mise à jour ne remplace automatiquement un logiciel que si son identité d'éditeur peut être vérifiée.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Sécurité") {
                 Label("Les étoiles GitHub indiquent la popularité, pas la fiabilité.",systemImage:"star")
-                Label("Les binaires restent soumis à Gatekeeper.",systemImage:"shield")
+                Label("Aucun contournement de Gatekeeper, aucune installation forcée de PKG.",systemImage:"shield")
+                Label("Une application non reconnue est dirigée vers une installation manuelle.",systemImage:"hand.raised")
             }
         }
         .formStyle(.grouped)
