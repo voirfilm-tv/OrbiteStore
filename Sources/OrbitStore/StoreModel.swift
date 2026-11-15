@@ -210,10 +210,23 @@ final class StoreModel: ObservableObject {
         seen = Set(current.map(\.path))
         installed = current
         if hasInitialInventory && notificationsEnabled {
-            for app in added {
-                let ecosystem = Ecosystems.matches(app.name)
-                if let first = ecosystem.first, let count = extensionCount[first.id], count > 0 {
-                    notify("Extensions disponibles pour \(app.name)",body:"\(count) ressources recensées dans le catalogue \(first.name). Vérifie leur compatibilité avant installation.")
+            // Never scan all apps over the network at launch. Only new installations,
+            // and only a small batch per local file-system scan.
+            for app in added.prefix(3) {
+                Task {
+                    if let ecosystem = Ecosystems.matches(app.name).first {
+                        if let records = try? await PluginDirectory.load(ecosystem) {
+                            extensionCount[ecosystem.id] = records.count
+                            if !records.isEmpty {
+                                notify("Extensions disponibles pour \(app.name)",
+                                       body:"\(records.count) ressources trouvées dans OrbitStore. Compatibilité à vérifier.")
+                            }
+                        }
+                    } else if let records = try? await PluginDirectory.relatedToUnknownApp(app.name),
+                              !records.isEmpty {
+                        notify("Projets associés à \(app.name)",
+                               body:"\(records.count) pistes trouvées sur GitHub. Compatibilité non vérifiée.")
+                    }
                 }
             }
         }
