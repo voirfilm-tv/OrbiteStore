@@ -42,6 +42,11 @@ SEARCHES = [
     ("Jeux", "topic:game topic:desktop stars:>80 archived:false"),
     ("Jeux", "topic:indie-game topic:macos stars:>15 archived:false"),
     ("Jeux", "macos game download in:description stars:>20 archived:false"),
+    ("Jeux", "topic:open-source-game topic:macos stars:>10 archived:false"),
+    ("Jeux", "topic:indie-game stars:>400 archived:false"),
+    ("Graphisme", "topic:image-editor topic:macos stars:>40 archived:false"),
+    ("Création", "topic:video-editor topic:macos stars:>40 archived:false"),
+    ("Audio & musique", "topic:music-player topic:macos stars:>40 archived:false"),
     ("Lanceurs & émulation", "topic:emulator topic:macos stars:>50 archived:false"),
     ("Lanceurs & émulation", "topic:game-launcher stars:>30 archived:false"),
     ("Lanceurs & émulation", "macos emulator in:description stars:>150 archived:false"),
@@ -63,11 +68,27 @@ SEARCHES = [
 REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 EXCLUDED = ("windows", "win32", "linux", "android", "freebsd", "openbsd", "netbsd",
             "source", "src-", "symbols", ".dsym", "debug", "terminal-only",
-            "console-only", "headless", "cli-only", "checksum", ".sha", ".asc",
+            "console-only", "headless", "cli-only", "dont-use", "do-not-use", "checksum", ".sha", ".asc",
             ".sig", "portable.exe", "setup.exe")
 LAUNCHER_HINTS = ("emulator", "launcher", "rom-manager", "game-launcher")
 ENGINE_HINTS = ("game-engine", "game-development", "game-framework", "engine")
 GOOD_LICENSES = None  # No license based gate: license remains visible in UI.
+# A small editorial weight improves discovery; it does not override release
+# verification. New entries must still publish a macOS package.
+FEATURED_REPOS = {
+    "iina/iina":100,"handbrake/handbrake":96,"localsend/localsend":98,
+    "storytold/photocraft":92,"storytold/vectorcraft":86,
+    "storytold/filmcraft":84,"storytold/pdfcraft":86,
+    "simohypers/limusic":95,"darktable-org/darktable":90,
+    "actualbudget/actual":92,"mifi/lossless-cut":91,
+    "openrct2/openrct2":97,"openttd/openttd":96,
+    "supertuxkart/stk-code":97,"ppy/osu":95,
+    "widelands/widelands":92,"wesnoth/wesnoth":92,
+    "mindustrygame/mindustry":91,"ddnet/ddnet":94,
+    "exelban/stats":90,"keepassxreboot/keepassxc":90,
+    "rustdesk/rustdesk":90,
+}
+
 
 
 def is_macos_asset(name: str) -> bool:
@@ -105,6 +126,8 @@ CONSUMER_REPOS = {
     "supertuxkart/stk-code", "ppy/osu", "exelban/stats",
     "moonlight-stream/moonlight-qt", "standardnotes/app",
     "brave/brave-browser",
+    "storytold/photocraft","storytold/vectorcraft","storytold/filmcraft",
+    "storytold/pdfcraft","simohypers/limusic","actualbudget/actual",
 }
 
 
@@ -200,6 +223,7 @@ def normalize_repo(entry: dict, category: str, verified_at: str, tag: str,
         "audience": classify_audience(entry, classify(category, entry, is_seed), asset),
         "verified_at": verified_at,
         "source": "GitHub release",
+        "editorial_rank": FEATURED_REPOS.get(repo.casefold(),0),
     }
 
 
@@ -267,14 +291,28 @@ def verify_one(item: dict, category: str, previous: dict | None,
         releases = api(f"/repos/{encoded}/releases?per_page=4")
         if not isinstance(releases, list):
             return None
-        for release in releases:
-            if release.get("draft") or not isinstance(release.get("assets"), list):
+        # Prefer non-prerelease packages; keep beta only when no stable macOS
+        # build exists. Rank formats so a real DMG wins over a ZIP or PKG.
+        ranked = sorted((release for release in releases if not release.get("draft")),
+                        key=lambda release:bool(release.get("prerelease")))
+        for release in ranked:
+            if not isinstance(release.get("assets"),list):
                 continue
-            mac_assets = [asset.get("name", "") for asset in release["assets"]
-                          if is_macos_asset(asset.get("name", ""))]
-            if mac_assets:
-                return normalize_repo(item, category, NOW.isoformat(), release.get("tag_name", ""),
-                                      mac_assets[0], is_seed, mac_assets)
+            candidates = [asset for asset in release["assets"]
+                          if is_macos_asset(asset.get("name",""))
+                          and asset.get("state","uploaded")=="uploaded"
+                          and (asset.get("size") or 0) >= 100_000]
+            candidates.sort(key=lambda asset:(
+                not asset["name"].lower().endswith(".dmg"),
+                not asset["name"].lower().endswith(".zip"),
+                -(asset.get("download_count") or 0)))
+            if candidates:
+                names=[asset["name"] for asset in candidates]
+                result=normalize_repo(item, category, NOW.isoformat(),
+                                      release.get("tag_name",""), names[0], is_seed, names)
+                result["downloads"]=sum(asset.get("download_count") or 0 for asset in candidates)
+                result["prerelease"]=bool(release.get("prerelease"))
+                return result
     except Exception as err:
         # Carry only recent, previously verified entries on temporary network errors.
         print(f"Release check failed ({repo}): {err}", file=sys.stderr)
@@ -354,6 +392,7 @@ def main() -> int:
     results = {key: value for key, value in results.items()
                if recent(value, MAX_AGE_DAYS) and is_macos_asset(value.get("asset_name", ""))}
     for entry in results.values():
+        entry["editorial_rank"] = FEATURED_REPOS.get(entry["repo"].casefold(),0)
         entry["audience"] = classify_audience(entry, entry.get("category", ""),
                                               entry.get("asset_name", ""))
         entry.setdefault("asset_names", [entry.get("asset_name", "")])
@@ -368,7 +407,10 @@ def main() -> int:
             canonical[key] = item
     # Favor popular real apps while separating engines and launchers from games.
     ordered_entries = sorted(canonical.values(),
-                             key=lambda e: (-int(e.get("stars") or 0), e["repo"].casefold()))[:MAX_ENTRIES]
+                             key=lambda e:(-int(e.get("editorial_rank") or 0),
+                                           -int(e.get("downloads") or 0),
+                                           -int(e.get("stars") or 0),
+                                           e["repo"].casefold()))[:MAX_ENTRIES]
     if len(ordered_entries) < 5:
         raise RuntimeError("Insufficient verified macOS entries; keeping existing index.")
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
