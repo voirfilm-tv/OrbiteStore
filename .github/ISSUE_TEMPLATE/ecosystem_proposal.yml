@@ -1,0 +1,37 @@
+name: Ecosystem proposal / Proposer un écosystème
+description: Suggest a host application and its extension registry / Proposer un logiciel et ses extensions
+title: "[Ecosystem] "
+body:
+  - type: input
+    id: host
+    attributes:
+      label: Host application / Application hôte
+      placeholder: "OBS Studio"
+    validations:
+      required: true
+  - type: input
+    id: upstream
+    attributes:
+      label: Official website or repository / Source officielle
+      placeholder: "https://github.com/..."
+    validations:
+      required: true
+  - type: textarea
+    id: registries
+    attributes:
+      label: Extension sources / Sources d'extensions
+      description: Provide official registry URLs and formats if available. / Sources officielles et formats.
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Verified compatibility signals / Vérification de compatibilité
+      description: Host version, macOS support, architecture, plugin API version.
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Review / Vérification
+      options:
+        - label: I checked that the suggested source is publicly accessible and lawful to index.
+          required: true

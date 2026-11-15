@@ -1,0 +1,49 @@
+name: Bug report / Rapport de bug
+description: Report a reproducible issue in OrbitStore / Signaler un problème reproductible
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never include passwords, private app inventories or API keys. For vulnerabilities, see SECURITY.md.
+        Ne publiez aucune donnée sensible. Pour une vulnérabilité, consultez SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: OrbitStore version / Version
+      placeholder: "0.2.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: architecture
+    attributes:
+      label: Mac architecture / Architecture
+      options:
+        - Apple Silicon
+        - Intel
+        - Unknown / Inconnue
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "macOS 15.0"
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce / Étapes
+      placeholder: "1. Open... 2. Search..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual / Attendu et obtenu
+    validations:
+      required: true
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Optional screenshots or safe logs / Captures ou journaux anonymisés
+      description: Remove personal information first. / Supprimez les données personnelles.

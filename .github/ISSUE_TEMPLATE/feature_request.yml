@@ -1,0 +1,27 @@
+name: Feature request / Nouvelle fonctionnalité
+description: Propose a focused change / Proposer une amélioration précise
+title: "[Feature] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity / Besoin
+      description: What would this make possible?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior / Comportement proposé
+    validations:
+      required: true
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Alternatives, security and compatibility / Alternatives et contraintes
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to work on a Pull Request / Je peux contribuer au développement.
