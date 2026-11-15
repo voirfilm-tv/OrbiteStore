@@ -48,14 +48,20 @@ enum MarketplaceHTTP {
         return data
     }
 
-    static func search(_ query: String, limit: Int = 30) async throws -> [GitHubHit] {
+    static func searchPage(_ query: String, limit: Int = 50, page: Int = 1) async throws -> (items:[GitHubHit],total:Int) {
+        guard page>=1 && page<=20, limit>=1 && limit<=100 else { throw MarketplaceNetworkError.malformed }
         var parts = URLComponents(string: "https://api.github.com/search/repositories")!
         parts.queryItems = [
             URLQueryItem(name: "q", value: "\(query) in:name,description,readme archived:false"),
-            URLQueryItem(name: "per_page", value: String(limit))
+            URLQueryItem(name: "per_page", value: String(limit)),
+            URLQueryItem(name: "page", value: String(page))
         ]
         guard let url = parts.url else { throw MarketplaceNetworkError.malformed }
-        return try JSONDecoder().decode(SearchPayload.self, from: try await fetch(url)).items
+        let payload=try JSONDecoder().decode(SearchPayload.self,from:try await fetch(url))
+        return (payload.items,min(payload.total_count,1000))
+    }
+    static func search(_ query: String, limit: Int = 50) async throws -> [GitHubHit] {
+        try await searchPage(query,limit:limit,page:1).items
     }
 
     static func pluginSearch(_ q: String) async throws -> [PluginRecord] {
@@ -82,24 +88,32 @@ final class GitHubDiscovery: ObservableObject {
     @Published var loading = false
     @Published var error: String?
     @Published var lastQuery = ""
+    @Published var totalCount = 0
+    @Published var loadingMore = false
+    private var page = 1
     private var cached: [String: [GitHubHit]] = [:]
 
     func search(_ raw: String) async {
         let term = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         if term.count < 2 {
             loading = false; results = []; error = nil; lastQuery = ""
+            totalCount=0; page=1
             return
         }
         if let previous = cached[term.lowercased()] {
             results = previous; lastQuery = term; error = nil; loading = false
+            totalCount=max(totalCount,previous.count)
+            page=max(1,Int(ceil(Double(previous.count)/50.0)))
             return
         }
         loading = true; error = nil; lastQuery = term
         do {
-            let hits = try await MarketplaceHTTP.search(term)
+            let first = try await MarketplaceHTTP.searchPage(term)
             guard !Task.isCancelled else { return }
-            results = hits
-            cached[term.lowercased()] = hits
+            results = first.items
+            page=1
+            totalCount=first.total
+            cached[term.lowercased()] = first.items
             error = nil
         } catch {
             guard !Task.isCancelled else { return }
@@ -107,6 +121,24 @@ final class GitHubDiscovery: ObservableObject {
             self.error = error.localizedDescription
         }
         loading = false
+    }
+
+    var canLoadMore: Bool { !loading && !loadingMore && results.count < min(totalCount,1000) }
+    func loadMore() async {
+        guard canLoadMore,lastQuery.count>=2 else { return }
+        loadingMore=true
+        defer { loadingMore=false }
+        do {
+            let response=try await MarketplaceHTTP.searchPage(lastQuery,page:page+1)
+            let known=Set(results.map(\.full_name))
+            results.append(contentsOf:response.items.filter{!known.contains($0.full_name)})
+            page += 1
+            totalCount=response.total
+            cached[lastQuery.lowercased()] = results
+            error=nil
+        } catch {
+            self.error=error.localizedDescription
+        }
     }
 }
 
