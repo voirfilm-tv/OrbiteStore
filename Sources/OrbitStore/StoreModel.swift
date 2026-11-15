@@ -234,6 +234,9 @@ final class StoreModel: ObservableObject {
     func catalogStars(_ entry:CatalogApp)->Int {
         info[entry.repo]?.stargazers_count ?? indexByRepo[entry.repo.lowercased()]?.stars ?? 0
     }
+    func catalogUpdatedAt(_ entry:CatalogApp)->String {
+        indexByRepo[entry.repo.lowercased()]?.updated_at ?? ""
+    }
     func catalogIsVerifiedMac(_ entry:CatalogApp)->Bool {
         indexByRepo[entry.repo.lowercased()] != nil
     }
