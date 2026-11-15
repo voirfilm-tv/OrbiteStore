@@ -693,14 +693,38 @@ struct CatalogDetails: View {
                 }
             }
             releaseStatus
-            if let path=store.downloaded[entry.repo] {
-                Label("Téléchargé : \(path)",systemImage:"checkmark.circle.fill")
-                    .font(.caption).foregroundStyle(.green)
+            if let file=store.downloadedFile(for:entry) {
+                VStack(alignment:.leading,spacing:9) {
+                    Label("Téléchargement terminé : \(file.lastPathComponent)",
+                          systemImage:"checkmark.circle.fill")
+                        .font(.subheadline).foregroundStyle(.green)
+                    Text(file.pathExtension.lowercased() == "dmg"
+                         ? "Étape suivante : ouvre le disque dans le Finder, glisse l'application dans Applications, puis vérifie sa détection."
+                         : "Étape suivante : vérifie la provenance et les protections Apple du fichier avant de poursuivre son installation.")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal:false,vertical:true)
+                    HStack(spacing:10) {
+                        Button(file.pathExtension.lowercased() == "dmg" ? "Ouvrir le DMG" : "Voir le paquet dans Finder") {
+                            store.openDownloaded(entry)
+                        }.buttonStyle(.borderedProminent)
+                        Button("Afficher dans Finder") { store.revealDownloaded(entry) }
+                            .buttonStyle(.bordered)
+                        Button("Vérifier l'installation") { store.scan() }
+                            .buttonStyle(.bordered)
+                    }
+                }
+                .padding(13)
+                .frame(maxWidth:.infinity,alignment:.leading)
+                .background(Color.green.opacity(0.075),in:RoundedRectangle(cornerRadius:13))
             }
             if let error=store.errors[entry.repo] {
                 Text(error).foregroundStyle(.orange).font(.caption)
             }
-            Text("Seuls les paquets identifiés comme macOS sont proposés. Le téléchargement n'installe ni n'exécute le logiciel.")
+            if let app=store.matches(entry).first {
+                Label("Présente sur ce Mac : version \(app.version)",systemImage:"checkmark.seal.fill")
+                    .font(.caption).foregroundStyle(.green)
+            }
+            Text("OrbitStore ouvre le disque DMG après un téléchargement demandé. Tu dois encore déplacer l'application vers Applications ; aucun installateur n'est exécuté silencieusement.")
                 .font(.caption).foregroundStyle(.secondary)
             Spacer()
             HStack {
@@ -708,11 +732,20 @@ struct CatalogDetails: View {
                 Spacer()
                 switch store.releaseAvailability[entry.repo] {
                 case .some(.ready(_, let preview)):
-                    Button(preview ? "Télécharger la préversion Mac" : "Télécharger la version Mac") {
-                        Task { await store.installCandidate(entry) }
+                    if store.downloadedFile(for:entry) != nil {
+                        Button("Télécharger à nouveau") {
+                            Task { await store.installCandidate(entry) }
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(store.downloading.contains(entry.repo))
+                    } else {
+                        Button(store.downloading.contains(entry.repo) ? "Téléchargement…" :
+                               (preview ? "Télécharger et ouvrir le DMG" : "Télécharger pour Mac")) {
+                            Task { await store.installCandidate(entry) }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(store.downloading.contains(entry.repo))
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(store.downloading.contains(entry.repo))
                 case .some(.failed(_)):
                     Button("Réessayer") {
                         Task { await store.checkDownloadAvailability(entry,force:true) }
@@ -724,7 +757,7 @@ struct CatalogDetails: View {
             }
         }
         .padding(27)
-        .frame(width:680,height:450)
+        .frame(width:720,height:525)
         .sheet(item:$chosenEcosystem) { ExtensionBrowser(ecosystem:$0) }
         .task(id:entry.repo) { await store.checkDownloadAvailability(entry) }
     }
