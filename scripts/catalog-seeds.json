@@ -1,0 +1,507 @@
+[
+  {
+    "repo": "OpenTTD/OpenTTD",
+    "name": "OpenTTD",
+    "category": "Jeux"
+  },
+  {
+    "repo": "OpenRCT2/OpenRCT2",
+    "name": "OpenRCT2",
+    "category": "Jeux"
+  },
+  {
+    "repo": "MindustryGame/mindustry",
+    "name": "Mindustry",
+    "category": "Jeux"
+  },
+  {
+    "repo": "luanti-org/luanti",
+    "name": "Luanti",
+    "category": "Jeux"
+  },
+  {
+    "repo": "The-Powder-Toy/The-Powder-Toy",
+    "name": "The Powder Toy",
+    "category": "Jeux"
+  },
+  {
+    "repo": "ShatteredPixel/Shattered-Pixel-Dungeon",
+    "name": "Shattered Pixel Dungeon",
+    "category": "Jeux"
+  },
+  {
+    "repo": "CleverRaven/Cataclysm-DDA",
+    "name": "Cataclysm: Dark Days Ahead",
+    "category": "Jeux"
+  },
+  {
+    "repo": "crawl/crawl",
+    "name": "Dungeon Crawl Stone Soup",
+    "category": "Jeux"
+  },
+  {
+    "repo": "FreeOrion/FreeOrion",
+    "name": "FreeOrion",
+    "category": "Jeux"
+  },
+  {
+    "repo": "hedgewars/hw",
+    "name": "Hedgewars",
+    "category": "Jeux"
+  },
+  {
+    "repo": "OpenRA/OpenRA",
+    "name": "OpenRA",
+    "category": "Jeux"
+  },
+  {
+    "repo": "endless-sky/endless-sky",
+    "name": "Endless Sky",
+    "category": "Jeux"
+  },
+  {
+    "repo": "SuperTux/supertux",
+    "name": "SuperTux",
+    "category": "Jeux"
+  },
+  {
+    "repo": "supertuxkart/stk-code",
+    "name": "SuperTuxKart",
+    "category": "Jeux"
+  },
+  {
+    "repo": "wesnoth/wesnoth",
+    "name": "Battle for Wesnoth",
+    "category": "Jeux"
+  },
+  {
+    "repo": "warzone2100/warzone2100",
+    "name": "Warzone 2100",
+    "category": "Jeux"
+  },
+  {
+    "repo": "ppy/osu",
+    "name": "osu!",
+    "category": "Jeux"
+  },
+  {
+    "repo": "OpenXcom/OpenXcom",
+    "name": "OpenXcom",
+    "category": "Jeux"
+  },
+  {
+    "repo": "ClassiCube/ClassiCube",
+    "name": "ClassiCube",
+    "category": "Jeux"
+  },
+  {
+    "repo": "Voxelesque/Veloren",
+    "name": "Veloren",
+    "category": "Jeux"
+  },
+  {
+    "repo": "0ad/0ad",
+    "name": "0 A.D.",
+    "category": "Jeux"
+  },
+  {
+    "repo": "openage/openage",
+    "name": "openage",
+    "category": "Jeux"
+  },
+  {
+    "repo": "OpenMW/openmw",
+    "name": "OpenMW",
+    "category": "Jeux"
+  },
+  {
+    "repo": "CorsixTH/CorsixTH",
+    "name": "CorsixTH",
+    "category": "Jeux"
+  },
+  {
+    "repo": "scummvm/scummvm",
+    "name": "ScummVM",
+    "category": "Lanceurs & émulation"
+  },
+  {
+    "repo": "Heroic-Games-Launcher/HeroicGamesLauncher",
+    "name": "Heroic Games Launcher",
+    "category": "Lanceurs & émulation"
+  },
+  {
+    "repo": "PrismLauncher/PrismLauncher",
+    "name": "Prism Launcher",
+    "category": "Lanceurs & émulation"
+  },
+  {
+    "repo": "Dolphin-emu/dolphin",
+    "name": "Dolphin Emulator",
+    "category": "Lanceurs & émulation"
+  },
+  {
+    "repo": "hrydgard/ppsspp",
+    "name": "PPSSPP",
+    "category": "Lanceurs & émulation"
+  },
+  {
+    "repo": "OpenEmu/OpenEmu",
+    "name": "OpenEmu",
+    "category": "Lanceurs & émulation"
+  },
+  {
+    "repo": "libretro/RetroArch",
+    "name": "RetroArch",
+    "category": "Lanceurs & émulation"
+  },
+  {
+    "repo": "RPCS3/rpcs3",
+    "name": "RPCS3",
+    "category": "Lanceurs & émulation"
+  },
+  {
+    "repo": "PlayCover/PlayCover",
+    "name": "PlayCover",
+    "category": "Lanceurs & émulation"
+  },
+  {
+    "repo": "Whisky-App/Whisky",
+    "name": "Whisky",
+    "category": "Lanceurs & émulation"
+  },
+  {
+    "repo": "itchio/itch",
+    "name": "itch.io",
+    "category": "Lanceurs & émulation"
+  },
+  {
+    "repo": "godotengine/godot",
+    "name": "Godot Engine",
+    "category": "Développement"
+  },
+  {
+    "repo": "obsproject/obs-studio",
+    "name": "OBS Studio",
+    "category": "Création"
+  },
+  {
+    "repo": "iina/iina",
+    "name": "IINA",
+    "category": "Multimédia"
+  },
+  {
+    "repo": "HandBrake/HandBrake",
+    "name": "HandBrake",
+    "category": "Multimédia"
+  },
+  {
+    "repo": "blender/blender",
+    "name": "Blender",
+    "category": "Création"
+  },
+  {
+    "repo": "microsoft/vscode",
+    "name": "Visual Studio Code",
+    "category": "Développement"
+  },
+  {
+    "repo": "VSCodium/vscodium",
+    "name": "VSCodium",
+    "category": "Développement"
+  },
+  {
+    "repo": "utmapp/UTM",
+    "name": "UTM",
+    "category": "Utilitaires"
+  },
+  {
+    "repo": "qBittorrent/qBittorrent",
+    "name": "qBittorrent",
+    "category": "Réseau"
+  },
+  {
+    "repo": "localsend/localsend",
+    "name": "LocalSend",
+    "category": "Réseau"
+  },
+  {
+    "repo": "jellyfin/jellyfin-media-player",
+    "name": "Jellyfin Media Player",
+    "category": "Multimédia"
+  },
+  {
+    "repo": "musescore/MuseScore",
+    "name": "MuseScore",
+    "category": "Audio & musique"
+  },
+  {
+    "repo": "audacity/audacity",
+    "name": "Audacity",
+    "category": "Audio & musique"
+  },
+  {
+    "repo": "mixxxdj/mixxx",
+    "name": "Mixxx",
+    "category": "Audio & musique"
+  },
+  {
+    "repo": "LMMS/lmms",
+    "name": "LMMS",
+    "category": "Audio & musique"
+  },
+  {
+    "repo": "KDE/krita",
+    "name": "Krita",
+    "category": "Graphisme"
+  },
+  {
+    "repo": "inkscape/inkscape",
+    "name": "Inkscape",
+    "category": "Graphisme"
+  },
+  {
+    "repo": "darktable-org/darktable",
+    "name": "darktable",
+    "category": "Graphisme"
+  },
+  {
+    "repo": "ankitects/anki",
+    "name": "Anki",
+    "category": "Éducation"
+  },
+  {
+    "repo": "zotero/zotero",
+    "name": "Zotero",
+    "category": "Éducation"
+  },
+  {
+    "repo": "brave/brave-browser",
+    "name": "Brave",
+    "category": "Internet"
+  },
+  {
+    "repo": "zen-browser/desktop",
+    "name": "Zen Browser",
+    "category": "Internet"
+  },
+  {
+    "repo": "minbrowser/min",
+    "name": "Min Browser",
+    "category": "Internet"
+  },
+  {
+    "repo": "AppFlowy-IO/AppFlowy",
+    "name": "AppFlowy",
+    "category": "Bureautique"
+  },
+  {
+    "repo": "laurent22/joplin",
+    "name": "Joplin",
+    "category": "Bureautique"
+  },
+  {
+    "repo": "keepassxreboot/keepassxc",
+    "name": "KeePassXC",
+    "category": "Sécurité"
+  },
+  {
+    "repo": "cryptomator/cryptomator",
+    "name": "Cryptomator",
+    "category": "Sécurité"
+  },
+  {
+    "repo": "sindresorhus/Velja",
+    "name": "Velja",
+    "category": "Utilitaires"
+  },
+  {
+    "repo": "alt-tab-macos/alt-tab-macos",
+    "name": "AltTab",
+    "category": "Personnalisation"
+  },
+  {
+    "repo": "pqrs-org/Karabiner-Elements",
+    "name": "Karabiner-Elements",
+    "category": "Personnalisation"
+  },
+  {
+    "repo": "mac-mouse-fix/mac-mouse-fix",
+    "name": "Mac Mouse Fix",
+    "category": "Accessibilité"
+  },
+  {
+    "repo": "dbeaver/dbeaver",
+    "name": "DBeaver",
+    "category": "Développement"
+  },
+  {
+    "repo": "sindresorhus/Plash",
+    "name": "Plash",
+    "category": "Personnalisation"
+  },
+  {
+    "repo": "voideditor/void",
+    "name": "Void",
+    "category": "Développement"
+  },
+  {
+    "repo": "zed-industries/zed",
+    "name": "Zed",
+    "category": "Développement"
+  },
+  {
+    "repo": "lapce/lapce",
+    "name": "Lapce",
+    "category": "Développement"
+  },
+  {
+    "repo": "helix-editor/helix",
+    "name": "Helix",
+    "category": "Développement"
+  },
+  {
+    "repo": "neovide/neovide",
+    "name": "Neovide",
+    "category": "Développement"
+  },
+  {
+    "repo": "jesseduffield/lazygit",
+    "name": "lazygit",
+    "category": "Développement"
+  },
+  {
+    "repo": "dani-garcia/vaultwarden",
+    "name": "Vaultwarden",
+    "category": "Sécurité"
+  },
+  {
+    "repo": "standardnotes/app",
+    "name": "Standard Notes",
+    "category": "Productivité"
+  },
+  {
+    "repo": "pulsar-edit/pulsar",
+    "name": "Pulsar",
+    "category": "Développement"
+  },
+  {
+    "repo": "Kong/insomnia",
+    "name": "Insomnia",
+    "category": "Développement"
+  },
+  {
+    "repo": "mullvad/mullvadvpn-app",
+    "name": "Mullvad VPN",
+    "category": "Sécurité"
+  },
+  {
+    "repo": "vesoft-inc/nebula",
+    "name": "Nebula",
+    "category": "Réseau"
+  },
+  {
+    "repo": "tailscale/tailscale",
+    "name": "Tailscale",
+    "category": "Réseau"
+  },
+  {
+    "repo": "jellyfin/jellyfin",
+    "name": "Jellyfin Server",
+    "category": "Réseau"
+  },
+  {
+    "repo": "moonlight-stream/moonlight-qt",
+    "name": "Moonlight",
+    "category": "Multimédia"
+  },
+  {
+    "repo": "LizardByte/Sunshine",
+    "name": "Sunshine",
+    "category": "Multimédia"
+  },
+  {
+    "repo": "mpv-player/mpv",
+    "name": "mpv",
+    "category": "Multimédia"
+  },
+  {
+    "repo": "qarmin/czkawka",
+    "name": "Czkawka",
+    "category": "Utilitaires"
+  },
+  {
+    "repo": "jtroo/kanata",
+    "name": "Kanata",
+    "category": "Personnalisation"
+  },
+  {
+    "repo": "rustdesk/rustdesk",
+    "name": "RustDesk",
+    "category": "Réseau"
+  },
+  {
+    "repo": "sindresorhus/Stats",
+    "name": "Stats",
+    "category": "Utilitaires"
+  },
+  {
+    "repo": "exelban/stats",
+    "name": "Stats",
+    "category": "Utilitaires"
+  },
+  {
+    "repo": "linearmouse/linearmouse",
+    "name": "LinearMouse",
+    "category": "Accessibilité"
+  },
+  {
+    "repo": "swiftyfin/swiftyfin",
+    "name": "Swiftfin",
+    "category": "Multimédia"
+  },
+  {
+    "repo": "macmade/Hot",
+    "name": "Hot",
+    "category": "Utilitaires"
+  },
+  {
+    "repo": "mifi/lossless-cut",
+    "name": "LosslessCut",
+    "category": "Multimédia"
+  },
+  {
+    "repo": "olive-editor/olive",
+    "name": "Olive",
+    "category": "Création"
+  },
+  {
+    "repo": "shotcut/shotcut",
+    "name": "Shotcut",
+    "category": "Création"
+  },
+  {
+    "repo": "kdenlive/kdenlive",
+    "name": "Kdenlive",
+    "category": "Création"
+  },
+  {
+    "repo": "sindresorhus/Pasteboard-Viewer",
+    "name": "Pasteboard Viewer",
+    "category": "Utilitaires"
+  },
+  {
+    "repo": "sindresorhus/Gifski",
+    "name": "Gifski",
+    "category": "Création"
+  },
+  {
+    "repo": "sindresorhus/Quick-Look-Plugins",
+    "name": "Quick Look Plugins",
+    "category": "Utilitaires"
+  },
+  {
+    "repo": "siyuan-note/siyuan",
+    "name": "SiYuan",
+    "category": "Productivité"
+  }
+]
