@@ -116,7 +116,7 @@ def classify_audience(repo: dict, category: str, asset: str) -> str:
     if key in DEVELOPER_REPOS or category == "Développement":
         return "developer"
     description = ((repo.get("name") or "") + " " +
-                   (repo.get("description") or "")).lower()
+                   (repo.get("description") or repo.get("summary") or "")).lower()
     if any(hint in description for hint in DEVELOPER_HINTS):
         return "developer"
     if any(hint in asset.lower() for hint in ("-cli", "_cli", "terminal",
@@ -182,7 +182,7 @@ def api(path: str, attempts=3) -> dict | list | None:
 
 
 def normalize_repo(entry: dict, category: str, verified_at: str, tag: str,
-                   asset: str, is_seed: bool) -> dict:
+                   asset: str, is_seed: bool, assets: list[str] | None = None) -> dict:
     repo = entry["full_name"]
     return {
         "repo": repo,
@@ -196,6 +196,7 @@ def normalize_repo(entry: dict, category: str, verified_at: str, tag: str,
         "updated_at": entry.get("pushed_at") or entry.get("updated_at"),
         "release_tag": tag,
         "asset_name": asset,
+        "asset_names": list(dict.fromkeys((assets or [asset])[:40])),
         "audience": classify_audience(entry, classify(category, entry, is_seed), asset),
         "verified_at": verified_at,
         "source": "GitHub release",
@@ -259,7 +260,8 @@ def verify_one(item: dict, category: str, previous: dict | None,
     if previous and recent(previous, RECHECK_AFTER_DAYS):
         # Preserve verified asset status while updating discovery metadata.
         return normalize_repo(item, category, previous["verified_at"],
-                              previous["release_tag"], previous["asset_name"], is_seed)
+                              previous["release_tag"], previous["asset_name"], is_seed,
+                              previous.get("asset_names") or [previous["asset_name"]])
     try:
         encoded = "/".join(urllib.parse.quote(segment, safe="") for segment in repo.split("/"))
         releases = api(f"/repos/{encoded}/releases?per_page=4")
@@ -272,7 +274,7 @@ def verify_one(item: dict, category: str, previous: dict | None,
                           if is_macos_asset(asset.get("name", ""))]
             if mac_assets:
                 return normalize_repo(item, category, NOW.isoformat(), release.get("tag_name", ""),
-                                      mac_assets[0], is_seed)
+                                      mac_assets[0], is_seed, mac_assets)
     except Exception as err:
         # Carry only recent, previously verified entries on temporary network errors.
         print(f"Release check failed ({repo}): {err}", file=sys.stderr)
@@ -352,8 +354,9 @@ def main() -> int:
     results = {key: value for key, value in results.items()
                if recent(value, MAX_AGE_DAYS) and is_macos_asset(value.get("asset_name", ""))}
     for entry in results.values():
-        entry.setdefault("audience", classify_audience(entry, entry.get("category", ""),
-                                                      entry.get("asset_name", "")))
+        entry["audience"] = classify_audience(entry, entry.get("category", ""),
+                                              entry.get("asset_name", ""))
+        entry.setdefault("asset_names", [entry.get("asset_name", "")])
     # GitHub may redirect legacy seed names to a canonical owner/repository.
     # Deduplicate by the *returned canonical repository*, not the input key.
     canonical = {}
