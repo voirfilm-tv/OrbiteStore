@@ -587,22 +587,32 @@ final class StoreModel: ObservableObject {
         await checkUpdates()
     }
 
-    func checkUpdates() async {
+    func checkUpdates(force:Bool=false) async {
         status = "Recherche des mises à jour…"
         let active=catalog.filter { !matches($0).isEmpty }
-        for entry in active {
+        // Rate-limit direct GitHub release queries. The common catalog index
+        // is downloaded once; checking all installed apps on launch can quickly
+        // exhaust anonymous API quota and slow the interface.
+        let current=Date()
+        let scheduled=active.filter { entry in
+            let key="orbit.updates.checked."+entry.repo.lowercased()
+            let last=UserDefaults.standard.object(forKey:key) as? Date
+            return force || last == nil || current.timeIntervalSince(last!)>12*3600
+        }
+        let limited=Array(scheduled.prefix(force ? 20 : 6))
+        for entry in limited {
+            if Task.isCancelled { break }
             await checkDownloadAvailability(entry,force:true)
+            UserDefaults.standard.set(Date(),forKey:"orbit.updates.checked."+entry.repo.lowercased())
             guard let release=releases[entry.repo],
                   isNewer(release.tag_name,than:matches(entry).first?.version ?? "?") else { continue }
-            // Never auto-download for a display-name-only match. A renamed
-            // unrelated app must not be offered a foreign binary automatically.
             if let known=knownBundleIDs[entry.repo.lowercased()],
                matches(entry).contains(where: { $0.bundleID.caseInsensitiveCompare(known) == .orderedSame }),
                autoDownload {
                 await download(entry,release:release)
             }
         }
-        status = "Vérification terminée"
+        status = "Vérification : \(limited.count) logiciels interrogés" 
     }
 
     private func github(_ path:String) async throws -> (Data,URLResponse) {
