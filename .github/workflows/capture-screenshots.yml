@@ -1,0 +1,53 @@
+name: Capture authentic macOS screenshots
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/capture-screenshots.yml"
+      - "scripts/capture-screenshots.sh"
+      - "scripts/window-id.swift"
+permissions:
+  contents: write
+jobs:
+  screenshots:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build actual macOS SwiftUI app
+        run: bash scripts/build-dmg.sh
+      - name: Capture real OrbitStore app windows
+        run: bash scripts/capture-screenshots.sh
+      - name: Publish authentic screenshots in repository README
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("README.md")
+          text = p.read_text(encoding="utf-8")
+          start = "<!-- ORBITSTORE_SCREENSHOTS_START -->"
+          end = "<!-- ORBITSTORE_SCREENSHOTS_END -->"
+          assert start in text and end in text
+          a = text.index(start)
+          b = text.index(end) + len(end)
+          section = """<!-- ORBITSTORE_SCREENSHOTS_START -->
+          ## Screenshots / Captures d'écran
+
+          Screenshots of the actual running macOS application. / Captures authentiques de l'application native.
+
+          ### Discover / Découvrir
+          ![OrbitStore actual Discover screen](docs/screenshots/discover.png)
+
+          ### Ecosystems / Écosystèmes
+          ![OrbitStore actual ecosystem directory](docs/screenshots/ecosystems.png)
+
+          ### GitHub Search / Recherche GitHub
+          ![OrbitStore actual GitHub search](docs/screenshots/search.png)
+          <!-- ORBITSTORE_SCREENSHOTS_END -->"""
+          p.write_text(text[:a] + section + text[b:], encoding="utf-8")
+          PY
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add README.md docs/screenshots/discover.png docs/screenshots/ecosystems.png docs/screenshots/search.png
+          git commit -m "docs: publish genuine OrbitStore screenshots [skip ci]"
+          git push origin "HEAD:$GITHUB_REF_NAME"

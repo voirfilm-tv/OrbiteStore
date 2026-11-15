@@ -25,10 +25,18 @@ struct OrbitStoreApp: App {
     }
 }
 
+// Only used for genuine screenshot CI navigation. Regular app launches are unchanged.
+private enum ScreenshotLaunchArguments {
+    static func value(_ key: String, fallback: String) -> String {
+        guard let arg = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix(key + "=") }) else { return fallback }
+        return String(arg.dropFirst(key.count + 1))
+    }
+}
+
 struct StoreWindow: View {
     @EnvironmentObject private var store: StoreModel
-    @State private var section = "Découvrir"
-    @State private var search = ""
+    @State private var section = ScreenshotLaunchArguments.value("--screenshot-section", fallback: "Découvrir")
+    @State private var search = ScreenshotLaunchArguments.value("--screenshot-search", fallback: "")
     @State private var selected: CatalogApp?
     @State private var selectedInstalled: MacApp?
     @State private var showingHelp = false
