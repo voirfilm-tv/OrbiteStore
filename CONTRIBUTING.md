@@ -67,3 +67,9 @@ See [catalog architecture](docs/CATALOG.md). Run the Python indexing policy suit
     python3 -m unittest discover -s tests -p test_catalog_index.py -v
 
 For new games or applications, propose a source repository in scripts/catalog-seeds.json and supply a legitimate macOS release URL. The scheduled indexer checks assets before including a candidate; do not add arbitrary game engines to the Games category or copy another marketplace's data. Changes to the indexer should be validated with Python tests and GitHub Actions before merging.
+
+## V0.5.0 UI and catalog contributions
+
+`Sources/OrbitStore/OrbitExperience.swift` contains the Dock-aware window guard, the visible installation feedback strip and editorial cards. `OrbitCollections.swift` contains the Alternatives and Self-hosted recommendations: these lists must be checked against real projects and should not imply false compatibility, paid-software trademark affiliation or complete functional parity.
+
+Catalog indexing (`scripts/index_catalog.py`) uses macOS release assets, a rotating search schedule and expiring negative-results cache. Run `python3 -m unittest discover -s tests -p test_catalog_index.py -v` before modifying it. Avoid fetching all GitHub repositories from every running Mac.

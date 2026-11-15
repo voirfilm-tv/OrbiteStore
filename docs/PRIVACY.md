@@ -1,6 +1,6 @@
 # Privacy / Confidentialité
 
-This documents the reviewed **v0.4.0 source**, not an independent audit.
+This documents the reviewed **v0.5.0 source**, not an independent audit.
 
 ### On-device
 
@@ -46,3 +46,6 @@ OrbitStore downloads a single static, public GitHub JSON index of macOS release 
 ### Catalog and updater options (v0.4.0)
 
 Developer Mode is stored locally in UserDefaults. In consumer mode, search matches the locally downloaded GitHub index rather than submitting every search term to GitHub. Developer Mode enables live GitHub repository search, which transmits typed queries. The dedicated OrbitStore updater checks the project's GitHub releases and saves a user-requested DMG under Downloads/OrbitStore, verifying its checksum before opening Finder. No silent self-installation occurs.
+### Faster icons and storefront collections (v0.5.0)
+
+Icons downloaded from upstream GitHub READMEs and known official homepages are cached under ~/Library/Caches/OrbitStore/AppIcons. The app bounds parallel icon requests to four and remembers absent icons temporarily. The editorial alternatives and self-hosted collections are stored locally in source code, not personalized through tracking or a new API. Opening a self-hosted project uses the browser to visit its public GitHub page. The update check's per-app recent timestamps are stored in UserDefaults to avoid rate-limit pressure.

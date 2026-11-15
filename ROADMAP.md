@@ -2,8 +2,16 @@
 
 OrbitStore is in **alpha**. Only checked items below are implemented.
 
-## Available in v0.4.0 / Livré
-- [x] Native SwiftUI storefront and macOS categories, including **Games / Jeux**
+## Available in v0.5.0 / Livré
+- [x] Native SwiftUI storefront and macOS categories, including **Games / Jeux**- [x] New native featured hero, editorial Mac app shelves and engaging app cards
+- [x] Self-hosted services gallery with non-installable server project distinction
+- [x] Alternatives curated from verifiable macOS package releases
+- [x] Main window constrained to macOS visible frame to avoid Dock overlap
+- [x] Immediate installation feedback, persistent queue status and manual DMG fallback
+- [x] Persistent icon disk cache, duplicate fetch coalescing and concurrency cap
+- [x] Rotating GitHub discovery pages and expiring negative-results cache
+- [x] Stable release preference and editorial relevance scoring
+
 - [x] Consumer-first catalog by default: known Mac release assets only
 - [x] Optional Developer Mode with technical repositories and full GitHub search
 - [x] CPU architecture filtering based on all indexed release asset names
@@ -28,7 +36,7 @@ OrbitStore is in **alpha**. Only checked items below are implemented.
 - [x] GitHub/Homebrew/Sparkle discovery and version changelog/ignore controls
 - [x] Official Obsidian registry adapter (manual vault selection, manifest validation, explicit consent)
 - [x] Editorial multi-tab app detail page
-- [x] Six Swift unit tests for versions, ZIP path safety and repository IDs
+- [x] Swift unit tests for version ordering, ZIP path safety and repository identity
 
 
 ## P0 — Stability, trust and compatibility / Fiabilité
@@ -73,3 +81,11 @@ OrbitStore is in **alpha**. Only checked items below are implemented.
 - [ ] Editorial curation of consumer software quality and categorization
 - [ ] Wider sources outside GitHub while preserving trusted download provenance
 - [ ] Fully hands-free signed self-updates if security and Apple distribution requirements can be met
+
+### Remaining work before stable 1.0
+
+- [ ] Test the Dock and modal layout on several physical Macs and external monitors
+- [ ] Native screenshot review of the new design and user testing
+- [ ] Verify real release contents on CI, not only ZIP/DMG filenames
+- [ ] Larger human-curated open source games catalog and optional legitimate non-GitHub sources
+- [ ] Real automated deployment of supported self-hosted services (separate, safety-reviewed project)

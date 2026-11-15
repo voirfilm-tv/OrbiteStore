@@ -44,3 +44,15 @@ Developer Mode is an opt-in setting that reveals programming tools, source-only 
 The indexer rejects packages labeled FreeBSD, source/debug artifacts, and terminal-only builds, and retains multiple Mac asset names when available. This is still metadata screening rather than a full unpack-and-inspect certification. A DMG/PKG/ZIP filename is not proof of executable safety or macOS compatibility.
 
 The November 15, 2026 feed included 247 projects with Mac release assets (165 consumer-labeled and 82 developer-labeled), prior to per-Mac architecture filtering.
+## Discovery performance and editorial quality — v0.5.0
+
+- Daily index generation runs on GitHub Actions; Mac clients fetch one compressed-size JSON response that they persist under Application Support, rather than probing hundreds of repositories at startup.
+- The indexer rotates deeper GitHub Search result pages between days while respecting API search limits. It checks a bounded subset of releases (maximum 480 per job, six concurrent workers) and checks curated seeds first.
+- A short-lived negative cache (data/catalog-rejected.json) records repository candidates with no Mac releases, so they are not rechecked every day. Items expire within 21 days and are rechecked after approximately nine days; the index cache contains at most 4,000 negatives.
+- Stable release assets are preferred; known corrupt/debug/other-platform artifacts are filtered by filename and upload size. Editorial relevance and release download counts improve ranking. These are signals, not a guarantee of app safety or software quality.
+- Local icon resolver caches image bytes on disk, coalesces concurrent lookup requests, limits the number of simultaneous downloads to four, and temporarily remembers missing icons.
+- Automatic installed-app update checks are throttled to a small batch per app launch; manually initiated checks can inspect a larger batch without scanning every GitHub release on every screen refresh.
+
+## Special collections
+
+The Alternatives collection only presents projects if the client index contains a compatible macOS release asset. ArtCraft is still experimental and Limusic has specific CPU and minimum macOS requirements. The Self-hosted collection is deliberately different: it catalogs web/server services for discovery and deployment documentation, and does not claim that server repositories provide a native Mac installer. Consumer Mode hides network administrator and developer-focused services; Developer Mode reveals them.

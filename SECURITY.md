@@ -1,6 +1,6 @@
 # Security / Sécurité
 
-**OrbitStore v0.4.0 is alpha software.** It discovers and downloads potentially untrusted GitHub files. It must not be treated as a trusted binary registry or a security-reviewed installer.
+**OrbitStore v0.5.0 is alpha software.** It discovers and downloads potentially untrusted GitHub files. It must not be treated as a trusted binary registry or a security-reviewed installer.
 
 ## Vulnerability reports / Signalement
 
@@ -37,3 +37,10 @@ The scheduled catalog indexer only checks for suitably named Mac release assets,
 The app downloads its own DMG only from official voirfilm-tv/OrbiteStore GitHub releases, checks its SHA-256 against the GitHub release digest or checksum manifest, and opens it in Finder. A checksum sourced from the same release validates transfer integrity, not independent publisher identity. OrbitStore does not silently replace itself, disable Gatekeeper, install a privileged helper or bypass macOS authorization.
 
 Developer Mode changes discovery visibility only. It is not a security or permission override.
+## Interactive installer fallback and self-hosted catalog
+
+If an explicitly requested silent install cannot proceed because of the app bundle's signing status, Gatekeeper rejection or destination permissions, OrbitStore can mount the downloaded DMG in Finder and explain the manual steps. Opening a disk image does not execute the bundled app and never disables macOS protections. Tampered archives, unsafe ZIP paths and mismatched bundle identities are not automatically opened.
+
+Self-hosted projects listed under their own gallery are externally operated servers. No automated server deployment, credential collection, port forwarding or remote code execution is triggered by catalog browsing.
+
+Icon filenames and requests are derived from upstream repositories/homepages; fetched images are cached locally. A repository logo is not proof of a verified publisher.
