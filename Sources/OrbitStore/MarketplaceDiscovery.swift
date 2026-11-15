@@ -12,6 +12,7 @@ struct GitHubHit: Decodable, Identifiable {
     let html_url: String
     let archived: Bool
     let default_branch: String?
+    let homepage: String?
     let language: String?
     let license: LicenseInfo?
     struct LicenseInfo: Decodable { let spdx_id: String? }
@@ -178,9 +179,10 @@ actor RepositoryLogoService {
     private var cache: [String: Data] = [:]
     private var unavailable = Set<String>()
 
-    func imageData(repo: String, branch: String?) async -> Data? {
+    func imageData(repo: String, branch: String?, homepage: String?) async -> Data? {
         if let existing = cache[repo] { return existing }
-        if unavailable.contains(repo) { return nil }
+        let lookupKey = repo + "|" + (homepage ?? "")
+        if unavailable.contains(lookupKey) { return nil }
         guard repo.split(separator: "/").count == 2 else { return nil }
         let bases = [branch ?? "main", "main", "master"]
         for base in Array(Set(bases)) {
@@ -196,7 +198,23 @@ actor RepositoryLogoService {
                 return imageData
             }
         }
-        unavailable.insert(repo)
+        if let homepageURL = URL(string: homepage ?? ""), homepageURL.scheme == "https",
+           let host = homepageURL.host, host != "github.com",
+           !host.hasSuffix(".github.com") {
+            var parts = URLComponents()
+            parts.scheme = "https"
+            parts.host = host
+            for iconPath in ["/apple-touch-icon.png", "/favicon.png", "/favicon.ico"] {
+                parts.path = iconPath
+                guard let iconURL = parts.url,
+                      let data = try? await MarketplaceHTTP.fetch(iconURL, accept: "image/*"),
+                      data.count < 2_000_000,
+                      NSImage(data: data) != nil else { continue }
+                cache[repo] = data
+                return data
+            }
+        }
+        unavailable.insert(lookupKey)
         return nil
     }
 
@@ -239,6 +257,7 @@ struct AuthenticAppIcon: View {
     let name: String
     var installedPath: String? = nil
     var branch: String? = nil
+    var homepage: String? = nil
     var size: CGFloat = 60
     @State private var remote: NSImage?
     var body: some View {
@@ -260,9 +279,9 @@ struct AuthenticAppIcon: View {
             }
         }
         .frame(width: size, height: size)
-        .task(id: repo) {
+        .task(id: repo + "|" + (branch ?? "") + "|" + (homepage ?? "")) {
             guard installedPath == nil else { return }
-            if let data = await RepositoryLogoService.shared.imageData(repo: repo, branch: branch) {
+            if let data = await RepositoryLogoService.shared.imageData(repo: repo, branch: branch, homepage: homepage) {
                 remote = NSImage(data: data)
             }
         }
