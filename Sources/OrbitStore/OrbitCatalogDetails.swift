@@ -20,7 +20,8 @@ struct CatalogDetails: View {
 
     private var appIcon:some View {
         AuthenticAppIcon(repo:entry.repo,name:entry.name,installedPath:installed?.path,
-                         branch:repoInfo?.default_branch,homepage:repoInfo?.homepage,size:100)
+                         branch:repoInfo?.default_branch,homepage:repoInfo?.homepage,
+                         iconURL:store.catalogIconURL(entry),size:100)
             .padding(10)
             .background(.white.opacity(0.16),in:RoundedRectangle(cornerRadius:25))
     }
@@ -168,7 +169,8 @@ struct CatalogDetails: View {
                                     AuthenticAppIcon(repo:other.repo,name:other.name,
                                         installedPath:store.matches(other).first?.path,
                                         branch:store.info[other.repo]?.default_branch,
-                                        homepage:store.info[other.repo]?.homepage,size:39)
+                                        homepage:store.info[other.repo]?.homepage,
+                                         iconURL:store.catalogIconURL(other),size:39)
                                     Text(other.name).font(.caption.weight(.semibold))
                                         .foregroundStyle(.primary)
                                 }
