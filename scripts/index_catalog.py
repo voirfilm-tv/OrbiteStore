@@ -270,7 +270,15 @@ def main() -> int:
     new.sort(key=lambda p: -int(p[1][0].get("stargazers_count") or 0))
     budget = max(0, MAX_CHECKS - len(seeds))
     work = [(key, value) for key, value in ordered if key in seeds]
-    work += [pair for pair in old + new if pair[0] not in seeds][:budget]
+    # Always reserve capacity for *new* discoveries. Otherwise, once the
+    # cached index grows beyond the daily budget it never grows again.
+    old_extra = [pair for pair in old if pair[0] not in seeds]
+    new_extra = [pair for pair in new if pair[0] not in seeds]
+    review_slots = min(len(old_extra), int(budget * 0.40))
+    fresh_slots = max(0, budget - review_slots)
+    work += old_extra[:review_slots] + new_extra[:fresh_slots]
+    if len(new_extra) < fresh_slots:
+        work += old_extra[review_slots:review_slots + fresh_slots - len(new_extra)]
     results = dict(previous)
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
         tasks = {pool.submit(verify_one, data, category, previous.get(key), is_seed): key
