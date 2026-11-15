@@ -2,8 +2,11 @@
 
 OrbitStore is in **alpha**. Only checked items below are implemented.
 
-## Available in v0.3.0 / Livré
+## Available in v0.3.1 / Livré
 - [x] Native SwiftUI storefront and macOS categories, including **Games / Jeux**
+- [x] Daily GitHub Actions Mac release index, local cache and indexed category discovery
+- [x] Games separated from emulators and launchers, with ranked results
+- [x] GitHub raw-search pagination and progressive 60-card category browsing
 - [x] Live GitHub search with in-app results and GitHub stars
 - [x] Installed-application discovery including proprietary apps, running apps and LaunchServices lookup for OrbitStore
 - [x] Category, GitHub search, installed, ecosystem, extension and update filters
@@ -33,8 +36,10 @@ OrbitStore is in **alpha**. Only checked items below are implemented.
 - [ ] Validate authentic application screenshots
 
 ## P1 — Discovery and polish / Découverte et finition
-- [ ] Distinguish installable macOS apps vs source-only repositories
-- [ ] Cache, paginate, deduplicate and rank repository search results
+- [x] Distinguish GitHub projects publishing a macOS release asset from source-only repositories
+- [ ] Verify each asset signature and CPU/OS compatibility before calling it installable
+- [x] Cache indexed catalog and paginate GitHub search results
+- [ ] Improve full-catalog ranking, freshness and image caching
 - [ ] Improve official icon resolution without excessive network calls
 - [ ] Sort/filter by category, freshness, license, architecture
 - [ ] In-app extension details including compatible/incompatible/unknown
