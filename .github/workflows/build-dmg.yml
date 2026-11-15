@@ -2,8 +2,11 @@ name: Build and publish macOS DMG
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     tags:
       - "v*"
+    paths:
+      - "scripts/Info.plist"
 permissions:
   contents: write
 jobs:
