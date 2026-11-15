@@ -1,6 +1,6 @@
 # Architecture / Architecture
 
-OrbitStore is a Swift Package executable targeting macOS 13+. It has **no backend service** of its own as of v0.3.0.
+OrbitStore is a Swift Package executable targeting macOS 13+. It has **no backend service** of its own as of v0.3.1.
 
 | File | Responsibility / Rôle |
 |---|---|
@@ -48,3 +48,7 @@ No privileged service is bundled. Because OrbitStore itself is ad-hoc signed and
 ### Plugin host adapters
 
 Obsidian official registry provides the first implementation. It checks GitHub release asset names, manifest plugin ID and minimum Obsidian version, requests a vault directory and explicit consent, then writes plugin assets. Plugin execution requires enabling the plugin in Obsidian. Other ecosystems currently have browse-only catalogs.
+
+### Automated catalog index — v0.3.1
+
+See [catalog design](CATALOG.md). The GitHub Actions catalog-index workflow runs a bounded Python indexer every day, validates that GitHub releases publish macOS-named assets, deduplicates repositories and publishes a compact static JSON file in data/catalog-index.json. SwiftUI loads and caches that index locally, merging it with the starter curated catalog. Categories and the Games/Launchers split use classified release metadata; live repository search remains a separate, paginated, untrusted discovery view. An asset filename is not an authorization for automatic installation.
