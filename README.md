@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/orbitstore-icon.png" alt="OrbitStore macOS app icon" width="144"></p>
+
 # OrbitStore
 
 **A GitHub-powered app and extension explorer for macOS.**  
