@@ -121,6 +121,11 @@ struct PluginRecord: Identifiable, Hashable {
 }
 
 enum PluginDirectory {
+    static func relatedToUnknownApp(_ appName: String) async throws -> [PluginRecord] {
+        let cleaned = appName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard cleaned.count >= 3 && cleaned.count <= 60 else { return [] }
+        return try await MarketplaceHTTP.pluginSearch("\"\(cleaned)\" plugin in:name,description")
+    }
     static func load(_ ecosystem: Ecosystem) async throws -> [PluginRecord] {
         switch ecosystem.id {
         case "obsidian":
