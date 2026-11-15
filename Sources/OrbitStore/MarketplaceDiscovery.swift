@@ -311,9 +311,28 @@ struct ExtensionBrowser: View {
     @State private var loading = true
     @State private var error: String?
     @State private var query = ""
+    @State private var pluginSort = "Nom A–Z"
+    @State private var pluginFilter = "Toutes"
     private var filtered: [PluginRecord] {
-        guard !query.isEmpty else { return records }
-        return records.filter { $0.name.localizedCaseInsensitiveContains(query) || $0.summary.localizedCaseInsensitiveContains(query) }
+        var items=records.filter {
+            query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) ||
+                $0.summary.localizedCaseInsensitiveContains(query)
+        }
+        if pluginFilter == "Registres officiels" {
+            items=items.filter { $0.source.hasPrefix("Registre") }
+        } else if pluginFilter == "Projets GitHub" {
+            items=items.filter { $0.source.contains("GitHub") }
+        } else if pluginFilter == "Avec étoiles" {
+            items=items.filter { $0.stars != nil }
+        }
+        if pluginSort == "★ GitHub" {
+            items.sort { ($0.stars ?? -1) > ($1.stars ?? -1) }
+        } else if pluginSort == "Nom Z–A" {
+            items.sort { $0.name.localizedStandardCompare($1.name) == .orderedDescending }
+        } else {
+            items.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        }
+        return items
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -328,6 +347,24 @@ struct ExtensionBrowser: View {
             }
             TextField("Rechercher dans les extensions…", text: $query)
                 .textFieldStyle(.roundedBorder)
+            HStack(spacing:10) {
+                Label("Filtres",systemImage:"line.3.horizontal.decrease")
+                    .font(.caption).foregroundStyle(.secondary)
+                Picker("Source",selection:$pluginFilter) {
+                    Text("Toutes").tag("Toutes")
+                    Text("Registres officiels").tag("Registres officiels")
+                    Text("Projets GitHub").tag("Projets GitHub")
+                    Text("Avec étoiles").tag("Avec étoiles")
+                }.pickerStyle(.menu).frame(width:180)
+                Picker("Trier",selection:$pluginSort) {
+                    Text("Nom A–Z").tag("Nom A–Z")
+                    Text("Nom Z–A").tag("Nom Z–A")
+                    Text("★ GitHub").tag("★ GitHub")
+                }.pickerStyle(.menu).frame(width:150)
+                Spacer()
+                Text("\(filtered.count) affichés")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             if loading {
                 ProgressView("Récupération du catalogue…").frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error {
