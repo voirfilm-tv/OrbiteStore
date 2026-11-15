@@ -439,6 +439,35 @@ struct CatalogDetails: View {
     @EnvironmentObject private var store: StoreModel
     @State private var chosenEcosystem: Ecosystem?
     let entry: CatalogApp
+
+    @ViewBuilder
+    private var releaseStatus: some View {
+        switch store.releaseAvailability[entry.repo] {
+        case .none, .some(.checking):
+            HStack(spacing:8) {
+                ProgressView().controlSize(.small)
+                Text("Vérification des versions macOS publiées sur GitHub…")
+                    .foregroundStyle(.secondary)
+            }
+        case .some(.ready(let tag, let prerelease)):
+            Label("Paquet macOS détecté : \(tag)",systemImage:"checkmark.circle.fill")
+                .foregroundStyle(.green)
+            if prerelease {
+                Label("Préversion GitHub : téléchargement expérimental, non garanti stable.",
+                      systemImage:"exclamationmark.triangle")
+                    .foregroundStyle(.orange).font(.caption)
+            }
+        case .some(.unavailable(let reason)):
+            Label(reason,systemImage:"info.circle")
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal:false,vertical:true)
+        case .some(.failed(let reason)):
+            Label(reason,systemImage:"exclamationmark.triangle")
+                .foregroundStyle(.orange)
+                .fixedSize(horizontal:false,vertical:true)
+        }
+    }
+
     var body: some View {
         VStack(alignment:.leading,spacing:18) {
             HStack(alignment:.top,spacing:18) {
@@ -474,9 +503,7 @@ struct CatalogDetails: View {
                     Label("Installée",systemImage:"checkmark.circle.fill").foregroundStyle(.green)
                 }
             }
-            if let rel=store.releases[entry.repo] {
-                Text("Dernière version GitHub : \(rel.tag_name)").font(.headline)
-            }
+            releaseStatus
             if let path=store.downloaded[entry.repo] {
                 Label("Téléchargé : \(path)",systemImage:"checkmark.circle.fill")
                     .font(.caption).foregroundStyle(.green)
@@ -484,20 +511,33 @@ struct CatalogDetails: View {
             if let error=store.errors[entry.repo] {
                 Text(error).foregroundStyle(.orange).font(.caption)
             }
-            Text("Le téléchargement ne lance aucune installation automatiquement. Les paquets conservent les protections de macOS.")
+            Text("Seuls les paquets identifiés comme macOS sont proposés. Le téléchargement n'installe ni n'exécute le logiciel.")
                 .font(.caption).foregroundStyle(.secondary)
             Spacer()
             HStack {
                 Button("Ouvrir sur GitHub") { NSWorkspace.shared.open(entry.url) }
                 Spacer()
-                Button("Télécharger la version Mac") {
-                    Task { await store.installCandidate(entry) }
-                }.buttonStyle(.borderedProminent)
+                switch store.releaseAvailability[entry.repo] {
+                case .some(.ready(_, let preview)):
+                    Button(preview ? "Télécharger la préversion Mac" : "Télécharger la version Mac") {
+                        Task { await store.installCandidate(entry) }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(store.downloading.contains(entry.repo))
+                case .some(.failed(_)):
+                    Button("Réessayer") {
+                        Task { await store.checkDownloadAvailability(entry,force:true) }
+                    }
+                    .buttonStyle(.bordered)
+                default:
+                    EmptyView()
+                }
             }
         }
         .padding(27)
         .frame(width:680,height:450)
         .sheet(item:$chosenEcosystem) { ExtensionBrowser(ecosystem:$0) }
+        .task(id:entry.repo) { await store.checkDownloadAvailability(entry) }
     }
 }
 
