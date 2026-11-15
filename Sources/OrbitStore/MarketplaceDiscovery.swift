@@ -241,22 +241,26 @@ actor RepositoryLogoService {
     }
 
     func imageData(repo:String,branch:String?,homepage:String?,iconURL:String? = nil) async -> Data? {
-        if let cached=cache[repo] { return cached }
-        if let persisted=loadDisk(repo) {
-            cache[repo]=persisted
+        // A newly indexed official icon must supersede an older incorrect
+        // README/fav-icon cached under the repository-only key.
+        let key=iconURL.map { repo + "|" + $0 } ?? repo
+        if let cached=cache[key] { return cached }
+        if let persisted=loadDisk(key) {
+            cache[key]=persisted
             return persisted
         }
-        if let pending=inFlight[repo] { return await pending.value }
+        if let pending=inFlight[key] { return await pending.value }
         let task=Task<Data?,Never> {
-            await self.fetchLimited(repo:repo,branch:branch,homepage:homepage,iconURL:iconURL)
+            await self.fetchLimited(repo:repo,branch:branch,homepage:homepage,
+                                    iconURL:iconURL,cacheKey:key)
         }
-        inFlight[repo]=task
+        inFlight[key]=task
         let result=await task.value
-        inFlight.removeValue(forKey:repo)
+        inFlight.removeValue(forKey:key)
         return result
     }
 
-    private func fetchLimited(repo:String,branch:String?,homepage:String?,iconURL:String?) async -> Data? {
+    private func fetchLimited(repo:String,branch:String?,homepage:String?,iconURL:String?,cacheKey:String) async -> Data? {
         while activeRequests >= maxActiveRequests {
             try? await Task.sleep(nanoseconds:150_000_000)
             if Task.isCancelled { return nil }
@@ -272,8 +276,8 @@ actor RepositoryLogoService {
            url.path.lowercased().hasPrefix("/"+repo.lowercased()+"/"),
            let bytes=try? await MarketplaceHTTP.fetch(url,accept:"image/*"),
            bytes.count<2_500_000,NSImage(data:bytes) != nil {
-            cache[repo]=bytes
-            saveDisk(bytes,repo:repo)
+            cache[cacheKey]=bytes
+            saveDisk(bytes,repo:cacheKey)
             return bytes
         }
         if unavailable.contains(key) { return nil }
@@ -295,8 +299,8 @@ actor RepositoryLogoService {
                 if Task.isCancelled { return nil }
                 guard let bytes=try? await MarketplaceHTTP.fetch(imageURL,accept:"image/*"),
                       bytes.count<2_500_000,NSImage(data:bytes) != nil else {continue}
-                cache[repo]=bytes
-                saveDisk(bytes,repo:repo)
+                cache[cacheKey]=bytes
+                saveDisk(bytes,repo:cacheKey)
                 return bytes
             }
         }
@@ -310,8 +314,8 @@ actor RepositoryLogoService {
                 guard let candidate=url.url,
                       let bytes=try? await MarketplaceHTTP.fetch(candidate,accept:"image/*"),
                       bytes.count<1_500_000,NSImage(data:bytes) != nil else {continue}
-                cache[repo]=bytes
-                saveDisk(bytes,repo:repo)
+                cache[cacheKey]=bytes
+                saveDisk(bytes,repo:cacheKey)
                 return bytes
             }
         }
