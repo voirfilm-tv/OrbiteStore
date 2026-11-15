@@ -26,6 +26,7 @@ BASE = "https://api.github.com"
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SEEDS = ROOT / "scripts" / "catalog-seeds.json"
 OUTPUT = ROOT / "data" / "catalog-index.json"
+REJECTED = ROOT / "data" / "catalog-rejected.json"
 VERSION = 1
 UTC = dt.timezone.utc
 NOW = dt.datetime.now(UTC)
@@ -240,6 +241,26 @@ def load_previous() -> dict[str, dict]:
         return {}
 
 
+def load_rejected() -> dict[str, str]:
+    """Short-lived cache of repositories with no known Mac build."""
+    try:
+        payload=json.loads(REJECTED.read_text(encoding="utf-8"))
+        if payload.get("schema")!=VERSION:
+            return {}
+        return {key:time for key,time in payload.get("entries",{}).items()
+                if REPO_RE.match(key) and isinstance(time,str)}
+    except (OSError,ValueError,TypeError):
+        return {}
+
+
+def is_recent_rejection(timestamp:str,days:int=9)->bool:
+    try:
+        observed=dt.datetime.fromisoformat(timestamp.replace("Z","+00:00"))
+        return 0<=(NOW-observed).total_seconds()<days*86400
+    except (ValueError,TypeError):
+        return False
+
+
 def recent(item: dict, max_age: int) -> bool:
     try:
         stamp = dt.datetime.fromisoformat(item["verified_at"].replace("Z", "+00:00"))
@@ -251,29 +272,33 @@ def recent(item: dict, max_age: int) -> bool:
 def search_candidates() -> dict[str, tuple[dict, str]]:
     candidates = {}
     failures = 0
-    for category, query in SEARCHES:
-        params = urllib.parse.urlencode({
-            "q": query, "sort": "stars", "order": "desc", "per_page": "75",
-        })
-        try:
-            response = api("/search/repositories?" + params)
-        except Exception as err:
-            failures += 1
-            print(f"Search skipped ({category}): {err}", file=sys.stderr)
-            if failures >= 4:
-                break
-            continue
-        if not isinstance(response, dict):
-            continue
-        for item in response.get("items", []):
-            repo = item.get("full_name") or ""
-            if not REPO_RE.match(repo) or item.get("archived") or item.get("fork"):
+    for index,(category, query) in enumerate(SEARCHES):
+        pages=[1]
+        # Across three days inspect deeper pages for a rotating subset of
+        # queries, instead of querying 1,000 results on every user's Mac.
+        if index % 3 == NOW.toordinal() % 3:
+            pages.append(2 + (NOW.toordinal() // 3) % 3)
+        for page in pages:
+            params=urllib.parse.urlencode({
+                "q":query,"sort":"stars","order":"desc",
+                "per_page":"75","page":str(page),
+            })
+            try:
+                response=api("/search/repositories?"+params)
+            except Exception as err:
+                failures+=1
+                print(f"Search skipped ({category}, page {page}): {err}",file=sys.stderr)
+                if failures>=4:
+                    return candidates
                 continue
-            key = repo.casefold()
-            if key not in candidates:
-                candidates[key] = (item, category)
-        # Every query may be re-run on another day. Avoid burst limits.
-        time.sleep(0.8)
+            if isinstance(response,dict):
+                for item in response.get("items",[]):
+                    repo=item.get("full_name") or ""
+                    if not REPO_RE.match(repo) or item.get("archived") or item.get("fork"):
+                        continue
+                    candidates.setdefault(repo.casefold(),(item,category))
+            # Keep authenticated GitHub Search within its minute-based quota.
+            time.sleep(1.6)
     return candidates
 
 
@@ -318,6 +343,7 @@ def verify_one(item: dict, category: str, previous: dict | None,
         print(f"Release check failed ({repo}): {err}", file=sys.stderr)
         if previous and recent(previous, MAX_AGE_DAYS):
             return previous
+        raise
     return None
 
 
@@ -326,6 +352,7 @@ def main() -> int:
     parser.add_argument("--seed-only", action="store_true")
     args = parser.parse_args()
     previous = load_previous()
+    rejected = load_rejected()
     seed_records = json.loads(SEEDS.read_text(encoding="utf-8"))
     seeds = {}
     for seed in seed_records:
@@ -369,7 +396,8 @@ def main() -> int:
     # Always reserve capacity for *new* discoveries. Otherwise, once the
     # cached index grows beyond the daily budget it never grows again.
     old_extra = [pair for pair in old if pair[0] not in seeds]
-    new_extra = [pair for pair in new if pair[0] not in seeds]
+    new_extra = [pair for pair in new if pair[0] not in seeds
+                 and not is_recent_rejection(rejected.get(pair[0],""))]
     review_slots = min(len(old_extra), int(budget * 0.40))
     fresh_slots = max(0, budget - review_slots)
     work += old_extra[:review_slots] + new_extra[:fresh_slots]
@@ -385,8 +413,10 @@ def main() -> int:
                 entry = task.result()
                 if entry:
                     results[key] = entry
+                    rejected.pop(key,None)
                 else:
-                    results.pop(key, None)
+                    results.pop(key,None)
+                    rejected[key]=NOW.isoformat()
             except Exception as err:
                 print(f"Unexpected verification error ({key}): {err}", file=sys.stderr)
     results = {key: value for key, value in results.items()
@@ -424,6 +454,15 @@ def main() -> int:
     }
     OUTPUT.write_text(json.dumps(document,ensure_ascii=False,separators=(",",":"))+"\n",
                       encoding="utf-8")
+    # A bounded, time-limited negative cache avoids repeatedly checking
+    # popular source-only repositories; never retain individual rejections
+    # beyond three weeks.
+    rejected={key:timestamp for key,timestamp in rejected.items()
+              if is_recent_rejection(timestamp,days=21)}
+    rejected=dict(list(sorted(rejected.items(),key=lambda kv:kv[1],reverse=True))[:4000])
+    REJECTED.write_text(json.dumps({"schema":VERSION,"generated_at":NOW.isoformat(),
+                                    "entries":rejected},separators=(",",":"))+"\n",
+                        encoding="utf-8")
     print(f"Verified {len(ordered_entries)} macOS release entries into {OUTPUT}")
     for category, count in sorted(document["categories"].items()):
         print(f"  {category}: {count}")
