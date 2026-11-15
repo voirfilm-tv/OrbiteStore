@@ -710,6 +710,9 @@ struct StoreWindow: View {
                 Button("Vérifier") { Task { await store.checkUpdates() } }
                     .buttonStyle(.borderedProminent)
             }
+            OrbitSelfUpdateCard()
+                .environmentObject(updater)
+            Divider()
             HStack(spacing:10) {
                 Label("Filtres",systemImage:"line.3.horizontal.decrease")
                     .font(.caption).foregroundStyle(.secondary)
