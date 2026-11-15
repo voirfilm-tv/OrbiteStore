@@ -61,23 +61,78 @@ SEARCHES = [
     ("Utilitaires", "macos app in:description stars:>1500 archived:false"),
 ]
 REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
-EXCLUDED = ("windows", "win32", "linux", "android", "source", "src-", "symbols", "debug",
-            "checksum", ".sha", ".asc", ".sig", "portable.exe", "setup.exe")
+EXCLUDED = ("windows", "win32", "linux", "android", "freebsd", "openbsd", "netbsd",
+            "source", "src-", "symbols", ".dsym", "debug", "terminal-only",
+            "console-only", "headless", "cli-only", "checksum", ".sha", ".asc",
+            ".sig", "portable.exe", "setup.exe")
 LAUNCHER_HINTS = ("emulator", "launcher", "rom-manager", "game-launcher")
 ENGINE_HINTS = ("game-engine", "game-development", "game-framework", "engine")
 GOOD_LICENSES = None  # No license based gate: license remains visible in UI.
 
 
 def is_macos_asset(name: str) -> bool:
+    """Conservative filename gate (not a signature or content verification)."""
     lower = name.lower()
     if any(word in lower for word in EXCLUDED):
         return False
-    mac = any(word in lower for word in ("macos", "mac-", "mac_", "darwin", "osx", "apple-silicon", ".app"))
-    if lower.endswith((".dmg", ".pkg")):
+    mac = any(word in lower for word in ("macos", "mac-", "mac_", "darwin",
+                                         "osx", "apple-silicon", ".app", "universal"))
+    if lower.endswith(".dmg"):
         return True
-    if lower.endswith(".zip") and mac:
-        return True
+    if lower.endswith(".pkg"):
+        return mac  # .pkg can also be FreeBSD; require a macOS indicator.
+    if lower.endswith(".zip"):
+        return mac and not lower.endswith((".dsym.zip", ".symbols.zip"))
     return False
+
+
+DEVELOPER_HINTS = (
+    "command line", "command-line", "cli tool", "terminal app", "terminal utility",
+    "framework", "library for", "software development kit", "developer tool",
+    "docker", "kubernetes", "self-hosted server", "api server",
+    "reverse proxy", "game engine", "game framework", "porting toolkit",
+    "debugger", "electron wrapper", "code editor", "ssh client",
+)
+DEVELOPER_REPOS = {
+    "tw93/pake", "codeeditapp/codeedit", "kivy/kivy", "xtool-org/xtool",
+    "sunshinestream/sunshine", "fleetdm/fleet", "sxyazi/yazi",
+    "wavetermdev/waveterm", "lencx/chatgpt", "jarvis322/macos-sysdata",
+}
+CONSUMER_REPOS = {
+    "iina/iina", "handbrake/handbrake", "obsproject/obs-studio",
+    "keepassxreboot/keepassxc", "cryptomator/cryptomator",
+    "localsend/localsend", "rustdesk/rustdesk", "openrct2/openrct2",
+    "supertuxkart/stk-code", "ppy/osu", "exelban/stats",
+    "moonlight-stream/moonlight-qt", "standardnotes/app",
+    "brave/brave-browser",
+}
+
+
+def classify_audience(repo: dict, category: str, asset: str) -> str:
+    """Hide technical projects unless developer mode is enabled."""
+    key = (repo.get("full_name") or "").casefold()
+    if key in CONSUMER_REPOS:
+        return "consumer"
+    if key in DEVELOPER_REPOS or category == "Développement":
+        return "developer"
+    description = ((repo.get("name") or "") + " " +
+                   (repo.get("description") or "")).lower()
+    if any(hint in description for hint in DEVELOPER_HINTS):
+        return "developer"
+    if any(hint in asset.lower() for hint in ("-cli", "_cli", "terminal",
+                                               "console", ".dsym", "-inso-")):
+        return "developer"
+    if category == "Jeux" and any(hint in description for hint in
+                                    ("cheat", "tier list", "modding tool", "trainer",
+                                     "game engine", "game mod manager")):
+        return "developer"
+    if category == "Lanceurs & émulation":
+        return "developer"
+    if category == "Réseau" and key not in {
+        "localsend/localsend", "rustdesk/rustdesk"
+    }:
+        return "developer"
+    return "consumer"
 
 
 def classify(category: str, repo: dict, seeded: bool) -> str:
@@ -141,6 +196,7 @@ def normalize_repo(entry: dict, category: str, verified_at: str, tag: str,
         "updated_at": entry.get("pushed_at") or entry.get("updated_at"),
         "release_tag": tag,
         "asset_name": asset,
+        "audience": classify_audience(entry, classify(category, entry, is_seed), asset),
         "verified_at": verified_at,
         "source": "GitHub release",
     }
@@ -295,6 +351,9 @@ def main() -> int:
                 print(f"Unexpected verification error ({key}): {err}", file=sys.stderr)
     results = {key: value for key, value in results.items()
                if recent(value, MAX_AGE_DAYS) and is_macos_asset(value.get("asset_name", ""))}
+    for entry in results.values():
+        entry.setdefault("audience", classify_audience(entry, entry.get("category", ""),
+                                                      entry.get("asset_name", "")))
     # GitHub may redirect legacy seed names to a canonical owner/repository.
     # Deduplicate by the *returned canonical repository*, not the input key.
     canonical = {}
