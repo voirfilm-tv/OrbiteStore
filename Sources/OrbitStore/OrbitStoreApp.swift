@@ -336,8 +336,8 @@ struct StoreWindow: View {
                     Spacer()
                     if store.developerMode {
                         Button("Voir les lanceurs") { section="Lanceurs & émulation" }
+                            .buttonStyle(.bordered)
                     }
-                        .buttonStyle(.bordered)
                 }
                 .padding(15).background(Color.indigo.opacity(0.07),in:RoundedRectangle(cornerRadius:14))
             }
