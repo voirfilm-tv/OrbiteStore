@@ -31,6 +31,17 @@ codesign --verify --verbose=2 "$APP"
 ln -sfn /Applications "$ROOT/dist/staging/Applications"
 hdiutil create -volname OrbitStore -srcfolder "$ROOT/dist/staging" \
   -format UDZO -ov "$ROOT/dist/OrbitStore-$VERSION-unsigned.dmg"
-hdiutil verify "$ROOT/dist/OrbitStore-$VERSION-unsigned.dmg"
+# diskimages-helper can briefly return EAGAIN on CI directly after creation.
+# Retry only the verification operation, and still fail on persistent errors.
+for attempt in 1 2 3; do
+  if hdiutil verify "$ROOT/dist/OrbitStore-$VERSION-unsigned.dmg"; then
+    break
+  fi
+  if [ "$attempt" -eq 3 ]; then
+    echo "DMG verification failed after three attempts" >&2
+    exit 1
+  fi
+  sleep 3
+done
 shasum -a 256 "$ROOT/dist/OrbitStore-$VERSION-unsigned.dmg" > "$ROOT/dist/SHA256SUMS.txt"
 echo "DMG READY: $ROOT/dist/OrbitStore-$VERSION-unsigned.dmg"
