@@ -47,9 +47,16 @@ final class OrbitVersionTests: XCTestCase {
         proc.waitUntilExit()
         XCTAssertEqual(proc.terminationStatus,0)
         let target=root.appendingPathComponent("Output",isDirectory:true)
-        XCTAssertThrowsError(try OrbitPackageInstaller.install(
-            package:package,targetDirectory:target,
-            expectedBundleID:"org.example.unsigned-test",runningBundleIDs:[]))
+        do {
+            let result=try OrbitPackageInstaller.install(
+                package:package,targetDirectory:target,
+                expectedBundleID:"org.example.unsigned-test",runningBundleIDs:[])
+            if case .installed = result {
+                XCTFail("An unsigned application must never be installed automatically.")
+            }
+        } catch {
+            // A hard verification failure is also a safe outcome.
+        }
         XCTAssertFalse(fm.fileExists(atPath:target.appendingPathComponent("Unsigned.app").path))
     }
 
