@@ -258,6 +258,7 @@ struct StoreWindow: View {
         }
         .onReceive(store.$releases) { _ in
             operations.notifyDigest(store:store)
+            operations.offerManagedUpdates(store:store)
         }
         .task(id:section + "|" + search) {
             guard remoteSearchSection else { return }
@@ -922,9 +923,9 @@ struct PreferencesPanel: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Mises à jour") {
-                Toggle("Télécharger automatiquement les mises à jour d'identité vérifiée",
-                    isOn:Binding(get:{store.autoDownload},set:{store.setAutoDownload($0)}))
-                Text("Ce réglage n'exécute aucun installateur. Une mise à jour ne remplace automatiquement un logiciel que si son identité d'éditeur peut être vérifiée.")
+                Toggle("Installer automatiquement les mises à jour des applications gérées et vérifiées",
+                       isOn:$operations.autoInstallManaged)
+                Text("Seulement pour les apps déjà installées par OrbitStore : même bundle ID, même éditeur signé, validation Gatekeeper et permissions disponibles. Une application ouverte, non notarisée ou non vérifiée reste manuelle.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Sécurité") {
