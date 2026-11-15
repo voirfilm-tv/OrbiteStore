@@ -285,6 +285,12 @@ def classify(category: str, repo: dict, seeded: bool) -> str:
     if category != "Jeux":
         return category
     topics = set(repo.get("topics") or ())
+    # A runtime requiring separately owned game files is not a standalone game.
+    if (repo.get("full_name") or "").casefold() in {
+        "openrct2/openrct2", "openmw/openmw",
+        "openxcom/openxcom", "corsixth/corsixth",
+    }:
+        return "Lanceurs & émulation"
     name = ((repo.get("name") or "") + " " + (repo.get("description") or "")).lower()
     if topics.intersection(ENGINE_HINTS) or "game engine" in name:
         return "Développement"
@@ -549,7 +555,11 @@ def main() -> int:
     for entry in results.values():
         category = seed_categories.get(entry["repo"].casefold())
         if category:
-            entry["category"] = category
+            entry["category"] = classify(category, {
+                "full_name":entry["repo"], "name":entry["name"],
+                "description":entry.get("summary") or "",
+                "topics":[],
+            }, True)
         entry["genre"] = game_genre(entry["repo"], entry["category"], entry.get("summary") or "")
         entry["editorial_rank"] = FEATURED_REPOS.get(entry["repo"].casefold(),0)
         entry["audience"] = classify_audience(entry, entry.get("category", ""),
