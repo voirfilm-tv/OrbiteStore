@@ -632,8 +632,14 @@ struct StoreWindow: View {
                         }
                         Spacer()
                         if store.updateAvailable(entry) {
-                            Button("Télécharger") { Task { await store.installCandidate(entry) } }
-                                .buttonStyle(.borderedProminent)
+                            if store.downloadedFile(for:entry) != nil {
+                                Button("Ouvrir le paquet") { store.openDownloaded(entry) }
+                                    .buttonStyle(.borderedProminent)
+                            } else {
+                                Button("Télécharger et ouvrir") { Task { await store.installCandidate(entry) } }
+                                    .buttonStyle(.borderedProminent)
+                                    .disabled(store.downloading.contains(entry.repo))
+                            }
                         } else {
                             Text("Aucune mise à jour confirmée").font(.caption).foregroundStyle(.secondary)
                         }
