@@ -16,6 +16,14 @@ struct OrbitHistoryEvent: Identifiable, Codable {
     let path: String?
 }
 
+struct OrbitInstallReceipt: Codable {
+    let repo:String
+    let bundleID:String
+    let teamID:String
+    let path:String
+    let approvedAt:Date
+}
+
 struct OrbitJob: Identifiable {
     let id: UUID
     let repo: String
@@ -254,6 +262,10 @@ final class OrbitOperations: ObservableObject {
     @Published var diagnoses:[String:OrbitDiagnosis]=[:]
     @Published var sources:[String:[OrbitSource]] = [:]
     @Published var ignoredVersions:[String:String] = [:]
+    @Published var receipts:[String:OrbitInstallReceipt] = [:]
+    @Published var autoInstallManaged:Bool {
+        didSet { UserDefaults.standard.set(autoInstallManaged,forKey:"orbit.autoManagedUpdates") }
+    }
     @Published var digestEnabled:Bool { didSet { UserDefaults.standard.set(digestEnabled,forKey:"orbit.digest") } }
     @Published var diagnosticStatus=""
     private var processing=false
@@ -265,7 +277,14 @@ final class OrbitOperations: ObservableObject {
         keepPackages=d.bool(forKey:"orbit.install.keep")
         launchAfterInstall=d.bool(forKey:"orbit.install.launch")
         digestEnabled=d.bool(forKey:"orbit.digest")
+        autoInstallManaged=d.bool(forKey:"orbit.autoManagedUpdates")
         ignoredVersions=d.dictionary(forKey:"orbit.ignoredVersions") as? [String:String] ?? [:]
+        let receiptFile=FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/OrbitStore/receipts.json")
+        if let data=try? Data(contentsOf:receiptFile),
+           let value=try? JSONDecoder().decode([String:OrbitInstallReceipt].self,from:data) {
+            receipts=value
+        }
         let file=Self.historyFile
         if let data=try? Data(contentsOf:file),let items=try? JSONDecoder().decode([OrbitHistoryEvent].self,from:data) {
             history=items
@@ -288,6 +307,29 @@ final class OrbitOperations: ObservableObject {
         try? FileManager.default.createDirectory(at:file.deletingLastPathComponent(),withIntermediateDirectories:true)
         if let data=try? JSONEncoder().encode(history) { try? data.write(to:file,options:.atomic) }
     }
+    private func saveReceipts() {
+        let path=FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/OrbitStore/receipts.json")
+        try? FileManager.default.createDirectory(at:path.deletingLastPathComponent(),
+                                                 withIntermediateDirectories:true)
+        if let data=try? JSONEncoder().encode(receipts) {
+            try? data.write(to:path,options:.atomic)
+        }
+    }
+    func offerManagedUpdates(store:StoreModel) {
+        guard autoInstallManaged else { return }
+        let eligible=Inventory.catalog.filter { entry in
+            guard let receipt=receipts[entry.repo],
+                  let app=store.matches(entry).first(where: { $0.bundleID==receipt.bundleID }),
+                  app.path==receipt.path,
+                  OrbitPackageInstaller.teamIdentifier(URL(fileURLWithPath:app.path))==receipt.teamID,
+                  store.updateAvailable(entry),
+                  !isIgnored(entry,release:store.releases[entry.repo]?.tag_name) else { return false }
+            return true
+        }
+        if !eligible.isEmpty { enqueue(eligible,store:store) }
+    }
+
     func ignore(_ repo:String,version:String) {
         ignoredVersions[repo]=version
         UserDefaults.standard.set(ignoredVersions,forKey:"orbit.ignoredVersions")
@@ -338,6 +380,14 @@ final class OrbitOperations: ObservableObject {
                 updateJob(job.id,phase:"Installée",detail:path,finished:true)
                 record(entry.name,action:backup == nil ? "installation":"mise à jour",
                        result:"succès",details:"Vérification macOS réussie",path:path)
+                let appURL=URL(fileURLWithPath:path)
+                if let bundleID=Bundle(url:appURL)?.bundleIdentifier,
+                   let team=OrbitPackageInstaller.teamIdentifier(appURL) {
+                    receipts[entry.repo]=OrbitInstallReceipt(
+                        repo:entry.repo,bundleID:bundleID,teamID:team,
+                        path:path,approvedAt:Date())
+                    saveReceipts()
+                }
                 if !keepPackages { try? FileManager.default.removeItem(at:package) }
                 store.scan()
                 if launchAfterInstall { NSWorkspace.shared.open(URL(fileURLWithPath:path)) }
@@ -389,6 +439,10 @@ final class OrbitOperations: ObservableObject {
                 record(app.name,action:"désinstallation",result:"corbeille",
                        details:"Application déplacée dans la Corbeille ; données utilisateur conservées.",path:app.path)
                 store.scan()
+                if let key=receipts.first(where:{$0.value.bundleID==app.bundleID})?.key {
+                    receipts.removeValue(forKey:key)
+                    saveReceipts()
+                }
                 diagnosticStatus="Déplacée dans la Corbeille."
             case .failure(let error):
                 diagnosticStatus="Désinstallation impossible : \(error.localizedDescription)"
@@ -438,7 +492,11 @@ final class OrbitOperations: ObservableObject {
                     guard a != nil && a==b else {
                         throw OrbitInstallError.unsafe("Éditeurs non concordants.")
                     }
-                    let (_,_) = try OrbitShell.run("/usr/bin/codesign",["--verify","--deep","--strict",backup.path])
+                    let (verified,_)=try OrbitShell.run("/usr/bin/codesign",
+                                ["--verify","--deep","--strict",backup.path])
+                    guard verified==0 else {
+                        throw OrbitInstallError.unsafe("Signature de la sauvegarde invalide.")
+                    }
                     let recovery=current.deletingLastPathComponent()
                         .appendingPathComponent(".orbitstore-recovery-\(UUID().uuidString).app")
                     try FileManager.default.moveItem(at:current,to:recovery)
