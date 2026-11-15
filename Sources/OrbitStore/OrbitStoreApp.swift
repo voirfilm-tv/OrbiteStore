@@ -12,11 +12,13 @@ struct OrbitStoreApp: App {
                 .environmentObject(store)
                 .environmentObject(operations)
                 .environmentObject(updater)
-                .frame(minWidth:960,minHeight:620)
+                .frame(minWidth:760,minHeight:520)
+                .background(OrbitWindowBoundsGuard())
                 .onAppear { store.start() }
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
+        .defaultSize(width:1180,height:780)
         Settings {
             PreferencesPanel().environmentObject(store).environmentObject(operations)
                 .environmentObject(updater).frame(width:680)
@@ -65,13 +67,15 @@ struct StoreWindow: View {
     @State private var updatesSort = "A–Z"
     private let columns = [GridItem(.adaptive(minimum:218,maximum:300),spacing:14)]
     private var remoteSearchSection: Bool {
-        store.developerMode && !["Installées","Écosystèmes","Mises à jour","Installations","Historique","Préférences"].contains(section)
+        store.developerMode && !["Installées","Écosystèmes","Mises à jour","Installations","Historique","Préférences","Alternatives","Auto-hébergé"].contains(section)
     }
     private var searchPrompt: String {
         switch section {
         case "Installées": return "Rechercher une application installée"
         case "Écosystèmes": return "Rechercher un écosystème"
         case "Mises à jour": return "Rechercher une mise à jour"
+        case "Alternatives": return "Chercher une alternative"
+        case "Auto-hébergé": return "Chercher un service auto-hébergé"
         default: return store.developerMode ? "Chercher des apps et dépôts GitHub" : "Rechercher une application macOS"
         }
     }
@@ -191,6 +195,8 @@ struct StoreWindow: View {
             List(selection:$section) {
                 Section("Bibliothèque") {
                     Label("Découvrir",systemImage:"sparkles.rectangle.stack").tag("Découvrir")
+                    Label("Alternatives",systemImage:"arrow.triangle.branch").tag("Alternatives")
+                    Label("Auto-hébergé",systemImage:"server.rack").tag("Auto-hébergé")
                     Label("Installées",systemImage:"square.stack.3d.up").tag("Installées")
                     Label("Écosystèmes",systemImage:"puzzlepiece.extension").tag("Écosystèmes")
                     Label("Mises à jour",systemImage:"arrow.triangle.2.circlepath").tag("Mises à jour")
@@ -235,13 +241,19 @@ struct StoreWindow: View {
                         case "Installations": OrbitQueuePage().environmentObject(store).environmentObject(operations)
                         case "Historique": OrbitHistoryPage().environmentObject(operations)
                         case "Préférences": PreferencesPanel()
+                        case "Alternatives": OrbitEditorialPage(kind:.alternatives)
+                            .environmentObject(store).environmentObject(operations)
+                        case "Auto-hébergé": OrbitEditorialPage(kind:.hosted)
+                            .environmentObject(store).environmentObject(operations)
                         default: catalogPage
                         }
                     }
                     HStack {
-                        Text(store.status).foregroundStyle(.secondary).font(.caption)
+                        Image(systemName:"shield.checkered").foregroundStyle(.secondary)
+                        Text("Paquets contrôlés lors de l'installation")
+                            .foregroundStyle(.secondary).font(.caption2)
                         Spacer()
-                        Text("★ = étoiles GitHub, pas des notes clients").font(.caption2).foregroundStyle(.secondary)
+                        Text(store.status).foregroundStyle(.secondary).font(.caption2)
                     }
                     .padding(.top,8)
                 }
@@ -250,6 +262,10 @@ struct StoreWindow: View {
                 .frame(maxWidth:.infinity)
             }
             .background(Color(nsColor:.windowBackgroundColor))
+            .safeAreaInset(edge:.bottom,spacing:0) {
+                OrbitActivityBar(showQueue:{ section="Installations" })
+                    .environmentObject(operations)
+            }
             .searchable(text:$search,placement:.toolbar,prompt:searchPrompt)
             .toolbar {
                 ToolbarItemGroup(placement:.primaryAction) {
