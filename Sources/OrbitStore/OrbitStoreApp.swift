@@ -463,7 +463,18 @@ struct StoreWindow: View {
                         }.buttonStyle(.plain)
                     }
                 }
-                Text("GitHub contient aussi des bibliothèques et des dépôts sans application macOS. Aucun paquet n'est supposé compatible sans vérification.")
+                if discovery.canLoadMore {
+                    HStack {
+                        Spacer()
+                        Button(discovery.loadingMore ? "Chargement…" : "Charger davantage de dépôts (\(discovery.results.count) / \(discovery.totalCount))") {
+                            Task { await discovery.loadMore() }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(discovery.loadingMore)
+                        Spacer()
+                    }.padding(.top,8)
+                }
+                Text("La recherche GitHub inclut du code source et des bibliothèques. Les applications Mac réellement indexées apparaissent dans la sélection OrbitStore.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
