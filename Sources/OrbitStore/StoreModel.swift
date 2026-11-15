@@ -96,6 +96,9 @@ struct IndexedMacApp: Decodable, Identifiable {
     let asset_name:String
     let asset_names:[String]?
     let audience:String?
+    let editorial_rank:Int?
+    let downloads:Int?
+    let prerelease:Bool?
     let verified_at:String
     var id:String { repo.lowercased() }
 }
@@ -302,6 +305,15 @@ final class StoreModel: ObservableObject {
     }
     func catalogStars(_ entry:CatalogApp)->Int {
         info[entry.repo]?.stargazers_count ?? indexByRepo[entry.repo.lowercased()]?.stars ?? 0
+    }
+    func catalogDiscoveryScore(_ entry:CatalogApp)->Double {
+        let item=indexByRepo[entry.repo.lowercased()]
+        let stars=Double(max(0,catalogStars(entry)))
+        let downloads=Double(max(0,item?.downloads ?? 0))
+        let editorial=Double(item?.editorial_rank ??
+            (OrbitCollections.featured.contains(where:{$0.caseInsensitiveCompare(entry.repo) == .orderedSame}) ? 80 : 0))
+        return editorial*12 + log2(stars+1)*3.5 + log2(downloads+1)*2 -
+            (item?.prerelease == true ? 6.0 : 0.0)
     }
     func catalogUpdatedAt(_ entry:CatalogApp)->String {
         indexByRepo[entry.repo.lowercased()]?.updated_at ?? ""
