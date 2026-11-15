@@ -24,6 +24,14 @@ struct OrbitInstallReceipt: Codable {
     let approvedAt:Date
 }
 
+struct OrbitActionFeedback:Identifiable {
+    enum Kind { case information,success,warning }
+    let id=UUID()
+    let title:String
+    let message:String
+    let kind:Kind
+}
+
 struct OrbitJob: Identifiable {
     let id: UUID
     let repo: String
@@ -268,6 +276,11 @@ final class OrbitOperations: ObservableObject {
     @Published var launchAfterInstall:Bool { didSet { UserDefaults.standard.set(launchAfterInstall,forKey:"orbit.install.launch") } }
     @Published var history:[OrbitHistoryEvent]=[]
     @Published var jobs:[OrbitJob]=[]
+    @Published var lastFeedback:OrbitActionFeedback?
+    func feedback(_ title:String,_ message:String,kind:OrbitActionFeedback.Kind = .information) {
+        lastFeedback=OrbitActionFeedback(title:title,message:message,kind:kind)
+    }
+    func clearFeedback() { lastFeedback=nil }
     @Published var diagnoses:[String:OrbitDiagnosis]=[:]
     @Published var pluginStatus:[String:String]=[:]
     @Published var sources:[String:[OrbitSource]] = [:]
@@ -350,9 +363,22 @@ final class OrbitOperations: ObservableObject {
     }
 
     func enqueue(_ entries:[CatalogApp],store:StoreModel) {
+        guard !entries.isEmpty else {
+            feedback("Sélection vide","Choisis au moins une application.",kind:.warning)
+            return
+        }
+        var added=0
         for entry in entries where !jobs.contains(where:{$0.repo==entry.repo && !$0.finished}) {
+            added += 1
             jobs.append(OrbitJob(id:UUID(),repo:entry.repo,name:entry.name,
                                 phase:"En attente",detail:"En file d'installation",finished:false))
+        }
+        if added>0 {
+            feedback("Demande enregistrée",
+                     added==1 ? "\(entries[0].name) est ajoutée à la file d'installation." :
+                          "\(added) applications sont ajoutées à la file d'installation.")
+        } else {
+            feedback("Déjà en cours","Cette installation figure déjà dans la file.")
         }
         guard !processing else { return }
         processing=true
@@ -372,6 +398,7 @@ final class OrbitOperations: ObservableObject {
             guard let package=await store.acquirePackage(entry) else {
                 let detail=store.errors[entry.repo] ?? "Aucun paquet macOS vérifié trouvé."
                 updateJob(job.id,phase:"Échec",detail:detail,finished:true)
+                feedback("Installation impossible",detail,kind:.warning)
                 record(entry.name,action:"installation",result:"échec",details:detail)
                 continue
             }
@@ -388,6 +415,7 @@ final class OrbitOperations: ObservableObject {
             switch result {
             case .success(.installed(let path,let backup)):
                 updateJob(job.id,phase:"Installée",detail:path,finished:true)
+                feedback("Installation terminée","\(entry.name) est installée.",kind:.success)
                 record(entry.name,action:backup == nil ? "installation":"mise à jour",
                        result:"succès",details:"Vérification macOS réussie",path:path)
                 let appURL=URL(fileURLWithPath:path)
@@ -402,11 +430,21 @@ final class OrbitOperations: ObservableObject {
                 store.scan()
                 if launchAfterInstall { NSWorkspace.shared.open(URL(fileURLWithPath:path)) }
             case .success(.manual(let message)):
-                updateJob(job.id,phase:"Action requise",detail:message,finished:true)
+                // The user explicitly requested installation. Opening the DMG
+                // does not execute untrusted code or bypass Gatekeeper.
+                let ext=package.pathExtension.lowercased()
+                let opened=["dmg","zip","pkg"].contains(ext) && NSWorkspace.shared.open(package)
+                if !opened { NSWorkspace.shared.activateFileViewerSelecting([package]) }
+                updateJob(job.id,phase:"Action requise",
+                          detail:(opened ? "Paquet ouvert automatiquement. " : "Paquet affiché dans Finder. ")+message,
+                          finished:true)
+                feedback("Installation manuelle nécessaire",
+                         (opened ? "Le paquet a été ouvert. " : "Retrouve le paquet dans Finder. ")+message,
+                         kind:.warning)
                 record(entry.name,action:"installation",result:"manuelle",details:message,path:package.path)
-                NSWorkspace.shared.activateFileViewerSelecting([package])
             case .failure(let error):
                 updateJob(job.id,phase:"Échec",detail:error.localizedDescription,finished:true)
+                feedback("Installation interrompue",error.localizedDescription,kind:.warning)
                 record(entry.name,action:"installation",result:"échec",details:error.localizedDescription)
             }
         }
