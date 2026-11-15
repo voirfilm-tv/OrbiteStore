@@ -95,7 +95,10 @@ struct OrbitEditorialPage:View {
                     VStack(alignment:.leading,spacing:12) {
                         HStack(spacing:12) {
                             if kind == .alternatives {
-                                AuthenticAppIcon(repo:entry.repo,name:entry.name,size:59)
+                                AuthenticAppIcon(repo:entry.repo,name:entry.name,
+                                     iconURL:store.catalogIconURL(CatalogApp(
+                                         repo:entry.repo,name:entry.name,
+                                         category:"",icon:"",aliases:[])),size:59)
                             } else {
                                 Image(systemName:entry.symbol)
                                     .font(.title2).foregroundStyle(.indigo)
