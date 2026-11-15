@@ -224,7 +224,7 @@ final class StoreModel: ObservableObject {
     private func installableAssetName(_ name:String)->Bool {
         let n=name.lowercased()
         guard !["windows","win32","linux","android","freebsd","openbsd",
-                ".dsym","symbols","source","src-","terminal-only","console-only",
+                "dsym","symbols","source","src-","terminal-only","console-only",
                 "headless","cli-only","dont-use","do-not-use"].contains(where:n.contains) else { return false }
         let mac=["macos","mac-","mac_","darwin","osx","apple-silicon",
                  ".app","universal"].contains(where:n.contains)
@@ -696,7 +696,7 @@ final class StoreModel: ObservableObject {
         func score(_ asset: ReleaseAsset) -> Int? {
             let n = asset.name.lowercased()
             guard !["windows","win32","linux","android","freebsd","openbsd",
-                     "source","src-","symbols","debug",".dsym","terminal-only",
+                     "source","src-","symbols","debug","dsym","terminal-only",
                      "console-only","headless","dont-use","do-not-use"].contains(where:n.contains)
             else { return nil }
             let macHint = n.contains("mac") || n.contains("darwin") ||
