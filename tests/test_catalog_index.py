@@ -103,6 +103,15 @@ class AssetClassificationTests(unittest.TestCase):
         repo={"name":"VCMI","description":"Open-source engine for Heroes of Might and Magic III","topics":[]}
         self.assertEqual(catalog.classify("Jeux",repo,False),"Lanceurs & émulation")
 
+    def test_runtime_requiring_commercial_assets_is_not_consumer_game(self):
+        item={"full_name":"OpenRCT2/OpenRCT2","name":"OpenRCT2",
+              "description":"Open-source re-implementation of RollerCoaster Tycoon 2",
+              "topics":[]}
+        category=catalog.classify("Jeux",item,True)
+        self.assertEqual(category,"Lanceurs & émulation")
+        self.assertEqual(catalog.classify_audience(item,category,"OpenRCT2-macos.dmg"),
+                         "developer")
+
     def test_game_is_kept(self):
         repo={"name":"Great Game","description":"A beautiful turn-based strategy game","topics":["game"]}
         self.assertEqual(catalog.classify("Jeux",repo,False),"Jeux")
