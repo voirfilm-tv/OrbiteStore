@@ -243,9 +243,9 @@ struct StoreWindow: View {
                         case "Installations": OrbitQueuePage().environmentObject(store).environmentObject(operations)
                         case "Historique": OrbitHistoryPage().environmentObject(operations)
                         case "Préférences": PreferencesPanel()
-                        case "Alternatives": OrbitEditorialPage(kind:.alternatives)
+                        case "Alternatives": OrbitEditorialPage(kind:.alternatives,query:$search)
                             .environmentObject(store).environmentObject(operations)
-                        case "Auto-hébergé": OrbitEditorialPage(kind:.hosted)
+                        case "Auto-hébergé": OrbitEditorialPage(kind:.hosted,query:$search)
                             .environmentObject(store).environmentObject(operations)
                         default: catalogPage
                         }
@@ -272,9 +272,18 @@ struct StoreWindow: View {
             .toolbar {
                 ToolbarItemGroup(placement:.primaryAction) {
                     if store.busy { ProgressView().controlSize(.small) }
-                    Button { store.scan() } label: { Image(systemName:"arrow.clockwise") }
+                    Button {
+                        store.scan()
+                        operations.feedback("Inventaire actualisé","Les applications installées ont été réanalysées.",kind:.success)
+                    } label: { Image(systemName:"arrow.clockwise") }
                         .help("Réanalyser le Mac")
-                    Button { Task { await store.refresh() } } label: { Image(systemName:"arrow.triangle.2.circlepath") }
+                    Button {
+                        operations.feedback("Actualisation demandée","Le catalogue est en cours de vérification.")
+                        Task {
+                            await store.refresh()
+                            operations.feedback("Catalogue actualisé",store.indexStatus,kind:.success)
+                        }
+                    } label: { Image(systemName:"arrow.triangle.2.circlepath") }
                         .help("Actualiser GitHub")
                 }
             }
@@ -292,7 +301,7 @@ struct StoreWindow: View {
             operations.notifyDigest(store:store)
             operations.offerManagedUpdates(store:store)
         }
-        .onChange(of:section) { _ in catalogPageSize=60 }
+        .onChange(of:section) { _ in catalogPageSize=60; search="" }
         .task { await updater.check() }
         .onChange(of:store.developerMode) { newValue in
             if !newValue && ["Développement","Lanceurs & émulation"].contains(section) {
@@ -385,7 +394,13 @@ struct StoreWindow: View {
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 if store.indexLoading { ProgressView().controlSize(.small) }
-                Button("Actualiser") { Task { await store.refresh() } }
+                Button("Actualiser") {
+                    operations.feedback("Actualisation lancée","Récupération de l'index compact.")
+                    Task {
+                        await store.refresh()
+                        operations.feedback("Catalogue synchronisé",store.indexStatus,kind:.success)
+                    }
+                }
                     .buttonStyle(.bordered)
                     .disabled(store.busy || store.indexLoading)
             }
@@ -768,7 +783,13 @@ struct StoreWindow: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("Vérifier") { Task { await store.checkUpdates() } }
+                Button("Vérifier") {
+                    operations.feedback("Recherche lancée","Vérification des versions des logiciels reconnus.")
+                    Task {
+                        await store.checkUpdates(force:true)
+                        operations.feedback("Vérification terminée",store.status,kind:.success)
+                    }
+                }
                     .buttonStyle(.borderedProminent)
             }
             OrbitSelfUpdateCard()
