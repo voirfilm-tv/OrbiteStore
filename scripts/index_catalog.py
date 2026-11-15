@@ -29,8 +29,8 @@ OUTPUT = ROOT / "data" / "catalog-index.json"
 VERSION = 1
 UTC = dt.timezone.utc
 NOW = dt.datetime.now(UTC)
-MAX_CANDIDATES = 520
-MAX_CHECKS = 260
+MAX_CANDIDATES = 800
+MAX_CHECKS = 480
 MAX_ENTRIES = 1250
 RECHECK_AFTER_DAYS = 12
 MAX_AGE_DAYS = 45
@@ -40,9 +40,12 @@ SEARCHES = [
     ("Jeux", "game macos in:description stars:>60 archived:false"),
     ("Jeux", "topic:open-source-game stars:>100 archived:false"),
     ("Jeux", "topic:game topic:desktop stars:>80 archived:false"),
+    ("Jeux", "topic:indie-game topic:macos stars:>15 archived:false"),
+    ("Jeux", "macos game download in:description stars:>20 archived:false"),
     ("Lanceurs & émulation", "topic:emulator topic:macos stars:>50 archived:false"),
     ("Lanceurs & émulation", "topic:game-launcher stars:>30 archived:false"),
     ("Lanceurs & émulation", "macos emulator in:description stars:>150 archived:false"),
+    ("Lanceurs & émulation", "topic:emulator stars:>500 archived:false"),
     ("Productivité", "topic:macos topic:productivity stars:>100 archived:false"),
     ("Utilitaires", "topic:macos topic:app stars:>100 archived:false"),
     ("Graphisme", "topic:macos topic:graphics stars:>30 archived:false"),
