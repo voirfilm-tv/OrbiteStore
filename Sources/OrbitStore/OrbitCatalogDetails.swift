@@ -117,7 +117,7 @@ struct CatalogDetails: View {
     private var overview:some View {
         VStack(alignment:.leading,spacing:15) {
             Text("À propos du logiciel").font(.title2.bold())
-            Text(repoInfo?.description ?? "Projet disponible sur GitHub. La description détaillée n'a pas encore été récupérée.")
+            Text(store.catalogDescription(entry))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth:.infinity,alignment:.leading)
             availability
@@ -275,7 +275,22 @@ struct CatalogDetails: View {
     }
 
     private var bottomBar:some View {
-        HStack(spacing:12) {
+        VStack(alignment:.leading,spacing:10) {
+            if let job=lastJob {
+                HStack(spacing:10) {
+                    if !job.finished { ProgressView().controlSize(.small) }
+                    else {
+                        Image(systemName:job.phase=="Installée" ? "checkmark.circle.fill" : "info.circle.fill")
+                            .foregroundStyle(job.phase=="Installée" ? Color.green : Color.orange)
+                    }
+                    VStack(alignment:.leading,spacing:3) {
+                        Text(job.phase).font(.caption.weight(.semibold))
+                        Text(job.detail).font(.caption2).foregroundStyle(.secondary).lineLimit(2)
+                    }
+                    Spacer()
+                }
+            }
+            HStack(spacing:12) {
             Button("Voir le dépôt") { NSWorkspace.shared.open(entry.url) }
                 .buttonStyle(.bordered)
             if let file=store.downloadedFile(for:entry) {
@@ -309,8 +324,9 @@ struct CatalogDetails: View {
                     Button("Non disponible pour Mac") {}.disabled(true)
                 }
             }
+            }
         }
-        .padding(.horizontal,25).padding(.vertical,17)
+        .padding(.horizontal,25).padding(.vertical,15)
         .background(.ultraThinMaterial)
     }
 
@@ -340,7 +356,7 @@ struct CatalogDetails: View {
             Divider()
             bottomBar
         }
-        .frame(width:850,height:690)
+        .frame(width:820,height:610)
         .sheet(item:$ecosystemToOpen) { ExtensionBrowser(ecosystem:$0) }
         .sheet(item:$alternateToOpen) { CatalogDetails(entry:$0)
             .environmentObject(store).environmentObject(operations) }
