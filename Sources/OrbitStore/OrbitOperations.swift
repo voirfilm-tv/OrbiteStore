@@ -443,9 +443,33 @@ final class OrbitOperations: ObservableObject {
                          kind:.warning)
                 record(entry.name,action:"installation",result:"manuelle",details:message,path:package.path)
             case .failure(let error):
-                updateJob(job.id,phase:"Échec",detail:error.localizedDescription,finished:true)
-                feedback("Installation interrompue",error.localizedDescription,kind:.warning)
-                record(entry.name,action:"installation",result:"échec",details:error.localizedDescription)
+                // An unsigned bundle or unwritable destination cannot be
+                // installed silently. Offer the requested DMG in Finder
+                // without executing the bundled .app or weakening Gatekeeper.
+                var mayOpenDMG=false
+                if let installerError=error as? OrbitInstallError {
+                    switch installerError {
+                    case .permission: mayOpenDMG=true
+                    case .unsafe(let reason):
+                        mayOpenDMG=reason.hasPrefix("Signature macOS invalide ou absente")
+                    case .unsupported,.operation: break
+                    }
+                }
+                let opened=mayOpenDMG && package.pathExtension.lowercased()=="dmg" &&
+                            NSWorkspace.shared.open(package)
+                let detail=error.localizedDescription
+                if opened {
+                    updateJob(job.id,phase:"Installation manuelle",
+                              detail:"DMG ouvert dans le Finder. "+detail,finished:true)
+                    feedback("DMG ouvert · action requise",
+                             "OrbitStore n'a pas pu installer automatiquement. Contrôle le logiciel et suis les demandes de macOS. "+detail,
+                             kind:.warning)
+                    record(entry.name,action:"installation",result:"manuelle",details:detail,path:package.path)
+                } else {
+                    updateJob(job.id,phase:"Échec",detail:detail,finished:true)
+                    feedback("Installation interrompue",detail,kind:.warning)
+                    record(entry.name,action:"installation",result:"échec",details:detail)
+                }
             }
         }
         processing=false
