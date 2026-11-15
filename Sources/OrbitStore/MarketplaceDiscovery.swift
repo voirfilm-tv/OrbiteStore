@@ -265,31 +265,42 @@ struct AuthenticAppIcon: View {
     var homepage: String? = nil
     var size: CGFloat = 60
     @State private var remote: NSImage?
+
+    private var lookupKey: String {
+        [repo, branch ?? "", homepage ?? ""].joined(separator: "|")
+    }
+
+    @ViewBuilder
+    private var graphic: some View {
+        if let path = installedPath {
+            Image(nsImage: NSWorkspace.shared.icon(forFile: path))
+                .resizable()
+                .scaledToFit()
+        } else if let image = remote {
+            Image(nsImage: image)
+                .resizable()
+                .scaledToFit()
+        } else {
+            Text(String(name.prefix(1)).uppercased())
+                .font(.system(size: size * 0.42, weight: .semibold))
+                .foregroundStyle(.secondary)
+        }
+    }
+
     var body: some View {
-        Group {
-            if let installedPath {
-                Image(nsImage: NSWorkspace.shared.icon(forFile: installedPath))
-                    .resizable().scaledToFit()
-            } else if let remote {
-                Image(nsImage: remote).resizable().scaledToFit()
-            } else {
-                ZStack {
-                    RoundedRectangle(cornerRadius: size * 0.22)
-                        .fill(Color(nsColor: .tertiaryLabelColor).opacity(0.10))
-                    Text(String(name.prefix(1)).uppercased())
-                        .font(.system(size: size * 0.42, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.secondary)
-                }
-                .help("Aucun logo authentique vérifié pour ce dépôt")
+        graphic
+            .frame(width: size, height: size)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.gray.opacity(0.10))
+            )
+            .task(id: lookupKey) {
+                guard installedPath == nil else { return }
+                let data = await RepositoryLogoService.shared.imageData(
+                    repo: repo, branch: branch, homepage: homepage
+                )
+                if let data { remote = NSImage(data: data) }
             }
-        }
-        .frame(width: size, height: size)
-        .task(id: repo + "|" + (branch ?? "") + "|" + (homepage ?? "")) {
-            guard installedPath == nil else { return }
-            if let data = await RepositoryLogoService.shared.imageData(repo: repo, branch: branch, homepage: homepage) {
-                remote = NSImage(data: data)
-            }
-        }
     }
 }
 
