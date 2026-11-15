@@ -26,6 +26,8 @@ jobs:
           bash scripts/build-dmg.sh
           test -s dist/staging/OrbitStore.app/Contents/Resources/OrbitStore.icns
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' dist/staging/OrbitStore.app/Contents/Info.plist)" = "OrbitStore.icns"
+      - name: Validate indexed Mac releases and editorial coverage
+        run: python3 -m unittest discover -s tests -p 'test_catalog_index.py' -v
       - name: Unit tests if available
         run: |
           if [ -d Tests ]; then swift test; else echo "No unit-test target yet."; fi

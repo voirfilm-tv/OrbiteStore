@@ -57,6 +57,54 @@ class AssetClassificationTests(unittest.TestCase):
     def test_generic_zip_not_verified(self):
         self.assertFalse(catalog.is_macos_asset("release.zip"))
 
+    def test_icon_finds_real_game_brand_in_data_directory(self):
+        self.assertGreater(catalog.score_icon_path(
+            "data/supertuxkart_512.png", "SuperTuxKart"), 100)
+        self.assertEqual(catalog.ICON_PATH_HINTS["supertuxkart/stk-code"],
+                         "data/supertuxkart_512.png")
+
+    def test_icon_rejects_badges_and_ui_controls(self):
+        self.assertEqual(catalog.score_icon_path(
+            "docs/screenshots/supertuxkart_512.png", "SuperTuxKart"), -1)
+        self.assertEqual(catalog.score_icon_path(
+            "data/gui/icons/back.png", "SuperTuxKart"), -1)
+
+    def test_genres_come_from_gameplay_not_stars(self):
+        self.assertEqual(catalog.game_genre(
+            "warzone2100/warzone2100", "Jeux"), "Stratégie")
+        self.assertEqual(catalog.game_genre(
+            "supertuxkart/stk-code", "Jeux"), "Course")
+        self.assertEqual(catalog.game_genre(
+            "drwhut/tabletop-club", "Jeux"), "Jeux de plateau")
+        self.assertIsNone(catalog.game_genre(
+            "appflowy-io/appflowy", "Bureautique"))
+
+    def test_office_candidates_are_curated_without_bypassing_macos_gate(self):
+        import json
+        seeds=json.loads(catalog.SEEDS.read_text(encoding="utf-8"))
+        names={item["repo"].lower():item["category"] for item in seeds}
+        self.assertEqual(names["jgraph/drawio-desktop"],"Bureautique")
+        self.assertEqual(names["obsidianmd/obsidian-releases"],"Bureautique")
+        self.assertFalse(catalog.is_macos_asset("office-source.zip"))
+
+    def test_every_public_category_has_curated_recommendations(self):
+        from pathlib import Path
+        data=(ROOT/"Sources/OrbitStore/OrbitSpotlightShelf.swift").read_text(encoding="utf-8")
+        for category in ("Jeux","Bureautique","Productivité","Création",
+                         "Graphisme","Audio & musique","Multimédia","Éducation",
+                         "Sécurité","Réseau","Internet","Utilitaires",
+                         "Personnalisation","Accessibilité","Développement",
+                         "Lanceurs & émulation"):
+            self.assertIn('category:"'+category+'"',data)
+        self.assertGreaterEqual(data.count(".init(name:"),140)
+
+    def test_alternative_directory_is_broad_and_filters_by_use(self):
+        data=(ROOT/"Sources/OrbitStore/OrbitAlternativesPage.swift").read_text(encoding="utf-8")
+        self.assertGreaterEqual(data.count(".init(name:"),100)
+        self.assertIn("localizedCaseInsensitiveContains",data)
+        self.assertIn("availability==",data)
+        self.assertIn("Audio & musique",data)
+
     def test_no_frameworks_in_games(self):
         repo={"name":"Engine X","description":"A game engine","topics":["game-engine"]}
         self.assertEqual(catalog.classify("Jeux",repo,False),"Développement")
@@ -72,6 +120,15 @@ class AssetClassificationTests(unittest.TestCase):
     def test_game_engine_requiring_assets_is_not_a_game(self):
         repo={"name":"VCMI","description":"Open-source engine for Heroes of Might and Magic III","topics":[]}
         self.assertEqual(catalog.classify("Jeux",repo,False),"Lanceurs & émulation")
+
+    def test_runtime_requiring_commercial_assets_is_not_consumer_game(self):
+        item={"full_name":"OpenRCT2/OpenRCT2","name":"OpenRCT2",
+              "description":"Open-source re-implementation of RollerCoaster Tycoon 2",
+              "topics":[]}
+        category=catalog.classify("Jeux",item,True)
+        self.assertEqual(category,"Lanceurs & émulation")
+        self.assertEqual(catalog.classify_audience(item,category,"OpenRCT2-macos.dmg"),
+                         "developer")
 
     def test_game_is_kept(self):
         repo={"name":"Great Game","description":"A beautiful turn-based strategy game","topics":["game"]}

@@ -55,4 +55,14 @@ The November 15, 2026 feed included 247 projects with Mac release assets (165 co
 
 ## Special collections
 
-The Alternatives collection only presents projects if the client index contains a compatible macOS release asset. ArtCraft is still experimental and Limusic has specific CPU and minimum macOS requirements. The Self-hosted collection is deliberately different: it catalogs web/server services for discovery and deployment documentation, and does not claim that server repositories provide a native Mac installer. Consumer Mode hides network administrator and developer-focused services; Developer Mode reveals them.
+The new **Alternatives** page is an editorial directory of more than 120 scoped substitutes, with text search, categories, and source/installation filters. Only a project present in the verified macOS-release index opens an OrbitStore installation sheet. All other entries open their publisher, Steam, browser or self-hosting documentation. A similarity suggestion is not a feature-parity or safety claim.
+
+The **Self-hosted** collection now includes personal services alongside advanced server/network software. It opens project documentation; it never misrepresents a Docker/server project as a macOS installer. Consumer Mode keeps particularly technical infrastructure tools separate.
+
+### Editorial discoveries beyond GitHub
+
+Every catalog category has a hand-reviewed shelf of familiar desktop apps, games, and web products. These supplement, rather than contaminate, the automated GitHub release feed. As a result, popular software distributed only on Steam, a vendor site or the Mac App Store is now discoverable even when no GitHub installer exists. The linked publisher handles purchase or installation outside OrbitStore. Search finds matching editorial entries too.
+
+### Authentic icon indexing
+
+The scheduled indexer scans a bounded sample of upstream Git trees for app artwork, favoring real high-resolution app icons and rejecting badges, screenshots, mobile-only icons and UI buttons. Several explicit paths, including `supertuxkart/stk-code:data/supertuxkart_512.png`, were verified directly against their publisher repositories. Icon URLs are fetched as static raw files with disk caching and a maximum of four concurrent requests. A newly verified icon URL has its own cache key to override older incorrect README imagery. This does not prove identity for every source and does not silently replace unknown branding with invented logos.

@@ -97,6 +97,8 @@ struct IndexedMacApp: Decodable, Identifiable {
     let asset_names:[String]?
     let audience:String?
     let editorial_rank:Int?
+    let genre:String?
+    let icon_url:String?
     let downloads:Int?
     let prerelease:Bool?
     let verified_at:String
@@ -313,6 +315,26 @@ final class StoreModel: ObservableObject {
     }
     func catalogStars(_ entry:CatalogApp)->Int {
         info[entry.repo]?.stargazers_count ?? indexByRepo[entry.repo.lowercased()]?.stars ?? 0
+    }
+    func catalogGameGenre(_ entry:CatalogApp)->String? {
+        indexByRepo[entry.repo.lowercased()]?.genre
+    }
+    func catalogIconURL(_ entry:CatalogApp)->String? {
+        guard let item=indexByRepo[entry.repo.lowercased()],
+              let value=item.icon_url,
+              let url=URL(string:value),url.scheme=="https",
+              url.host=="raw.githubusercontent.com",
+              url.path.lowercased().hasPrefix("/"+item.repo.lowercased()+"/")
+        else { return nil }
+        return value
+    }
+    func catalogPopularityScore(_ entry:CatalogApp)->Double {
+        let item=indexByRepo[entry.repo.lowercased()]
+        let editorial=Double(item?.editorial_rank ?? 0)
+        let stars=Double(max(0,catalogStars(entry)))
+        let downloads=Double(max(0,item?.downloads ?? 0))
+        // Not a consumer-rating metric. Weighted publisher signal and editorial relevance.
+        return editorial*8 + log2(stars+1)*4 + log2(downloads+1)*3
     }
     func catalogDiscoveryScore(_ entry:CatalogApp)->Double {
         let item=indexByRepo[entry.repo.lowercased()]
