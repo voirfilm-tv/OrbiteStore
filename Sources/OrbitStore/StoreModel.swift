@@ -94,6 +94,7 @@ struct IndexedMacApp: Decodable, Identifiable {
     let updated_at:String?
     let release_tag:String
     let asset_name:String
+    let asset_names:[String]?
     let audience:String?
     let verified_at:String
     var id:String { repo.lowercased() }
@@ -229,8 +230,21 @@ final class StoreModel: ObservableObject {
         return false
     }
 
+    private func compatibleAssetName(_ name:String)->Bool {
+        guard installableAssetName(name) else { return false }
+        let n=name.lowercased()
+        let intel=["x86_64","x64","amd64","intel"].contains(where:n.contains)
+        let arm=["arm64","aarch64","apple-silicon"].contains(where:n.contains)
+        let universal=n.contains("universal")
+        let appleSilicon=ProcessInfo.processInfo.machineHardwareName.contains("arm")
+        if appleSilicon && intel && !arm && !universal { return false }
+        if !appleSilicon && arm && !intel && !universal { return false }
+        return true
+    }
+
     private func isPublicApp(_ item:IndexedMacApp)->Bool {
-        guard installableAssetName(item.asset_name) else { return false }
+        let files=item.asset_names ?? [item.asset_name]
+        guard files.contains(where:compatibleAssetName) else { return false }
         if let audience=item.audience { return audience=="consumer" }
         // Older offline indexes lacked an explicit audience field.
         // Fail closed on technical project categories and descriptors.
@@ -294,7 +308,7 @@ final class StoreModel: ObservableObject {
     }
     func catalogIsVerifiedMac(_ entry:CatalogApp)->Bool {
         guard let item=indexByRepo[entry.repo.lowercased()] else { return false }
-        return installableAssetName(item.asset_name)
+        return (item.asset_names ?? [item.asset_name]).contains(where:compatibleAssetName)
     }
     func catalogReleaseTag(_ entry:CatalogApp)->String? {
         indexByRepo[entry.repo.lowercased()]?.release_tag
