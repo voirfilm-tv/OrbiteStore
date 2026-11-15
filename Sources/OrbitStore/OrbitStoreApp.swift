@@ -300,8 +300,12 @@ struct StoreWindow: View {
             }
             let entries=Inventory.catalog.filter { !store.matches($0).isEmpty }
             if entries.isEmpty {
-                ContentUnavailableView("Aucune application GitHub reconnue",systemImage:"checkmark.circle",
-                    description:Text("Les applications installées apparaîtront ici lorsqu'une correspondance fiable sera identifiée."))
+                VStack(spacing:12) {
+                    Image(systemName:"checkmark.circle").font(.largeTitle).foregroundStyle(.secondary)
+                    Text("Aucune application GitHub reconnue").font(.headline)
+                    Text("Les applications installées apparaîtront ici lorsqu'une correspondance fiable sera identifiée.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }.frame(maxWidth:.infinity,minHeight:170)
             } else {
                 ForEach(entries) { entry in
                     HStack(spacing:15) {
@@ -404,8 +408,12 @@ struct InstalledDetails: View {
             Text("Extensions et outils compatibles").font(.title2.bold())
             let ecosystems=Ecosystems.matches(app.name)
             if ecosystems.isEmpty {
-                ContentUnavailableView("Aucune ressource recensée",systemImage:"puzzlepiece",
-                    description:Text("OrbitStore ne connaît pas encore d'écosystème pour cette application."))
+                VStack(spacing:12) {
+                    Image(systemName:"puzzlepiece").font(.largeTitle).foregroundStyle(.secondary)
+                    Text("Aucune ressource recensée").font(.headline)
+                    Text("OrbitStore ne connaît pas encore d'écosystème pour cette application.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }.frame(maxWidth:.infinity,minHeight:170)
             } else {
                 ForEach(ecosystems) { e in
                     HStack {
