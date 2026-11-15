@@ -20,8 +20,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Swift version
         run: swift --version
-      - name: Compile native macOS app
-        run: swift build -c debug --product OrbitStore
+      - name: Build and validate macOS application package
+        run: |
+          bash scripts/build-dmg.sh
+          test -s dist/staging/OrbitStore.app/Contents/Resources/OrbitStore.icns
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' dist/staging/OrbitStore.app/Contents/Info.plist)" = "OrbitStore.icns"
       - name: Unit tests if available
         run: |
           if [ -d Tests ]; then swift test; else echo "No unit-test target yet."; fi
