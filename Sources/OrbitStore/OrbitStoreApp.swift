@@ -4,17 +4,19 @@ import AppKit
 @main
 struct OrbitStoreApp: App {
     @StateObject private var store = StoreModel()
+    @StateObject private var operations = OrbitOperations()
     var body: some Scene {
         WindowGroup {
             StoreWindow()
                 .environmentObject(store)
+                .environmentObject(operations)
                 .frame(minWidth:960,minHeight:620)
                 .onAppear { store.start() }
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
         Settings {
-            PreferencesPanel().environmentObject(store).frame(width:520)
+            PreferencesPanel().environmentObject(store).environmentObject(operations).frame(width:620)
         }
         MenuBarExtra("OrbitStore", systemImage:"square.stack.3d.up.fill") {
             Button("Analyser les applications") { store.scan() }
@@ -35,6 +37,7 @@ private enum ScreenshotLaunchArguments {
 
 struct StoreWindow: View {
     @EnvironmentObject private var store: StoreModel
+    @EnvironmentObject private var operations: OrbitOperations
     @State private var section = ScreenshotLaunchArguments.value("--screenshot-section", fallback: "Découvrir")
     @State private var search = ScreenshotLaunchArguments.value("--screenshot-search", fallback: "")
     @State private var selected: CatalogApp?
@@ -54,7 +57,7 @@ struct StoreWindow: View {
     @State private var updatesSort = "A–Z"
     private let columns = [GridItem(.adaptive(minimum:218,maximum:300),spacing:14)]
     private var remoteSearchSection: Bool {
-        !["Installées","Écosystèmes","Mises à jour","Préférences"].contains(section)
+        !["Installées","Écosystèmes","Mises à jour","Installations","Historique","Préférences"].contains(section)
     }
     private var searchPrompt: String {
         switch section {
@@ -179,6 +182,8 @@ struct StoreWindow: View {
                     Label("Installées",systemImage:"square.stack.3d.up").tag("Installées")
                     Label("Écosystèmes",systemImage:"puzzlepiece.extension").tag("Écosystèmes")
                     Label("Mises à jour",systemImage:"arrow.triangle.2.circlepath").tag("Mises à jour")
+                    Label("Installations",systemImage:"shippingbox.fill").tag("Installations")
+                    Label("Historique",systemImage:"clock.arrow.circlepath").tag("Historique")
                 }
                 Section("Catégories") {
                     ForEach(Inventory.categories,id:\.self) { cat in
@@ -213,6 +218,8 @@ struct StoreWindow: View {
                         case "Installées": installedPage
                         case "Écosystèmes": ecosystemsPage
                         case "Mises à jour": updatesPage
+                        case "Installations": OrbitQueuePage().environmentObject(store).environmentObject(operations)
+                        case "Historique": OrbitHistoryPage().environmentObject(operations)
                         case "Préférences": PreferencesPanel()
                         default: catalogPage
                         }
@@ -241,13 +248,16 @@ struct StoreWindow: View {
             }
         }
         .sheet(item:$selected) { entry in
-            CatalogDetails(entry:entry).environmentObject(store)
+            CatalogDetails(entry:entry).environmentObject(store).environmentObject(operations)
         }
         .sheet(item:$selectedInstalled) { app in
-            InstalledDetails(app:app).environmentObject(store)
+            InstalledDetails(app:app).environmentObject(store).environmentObject(operations)
         }
         .sheet(item:$selectedEcosystem) { ecosystem in
             ExtensionBrowser(ecosystem:ecosystem)
+        }
+        .onReceive(store.$releases) { _ in
+            operations.notifyDigest(store:store)
         }
         .task(id:section + "|" + search) {
             guard remoteSearchSection else { return }
@@ -633,10 +643,10 @@ struct StoreWindow: View {
                         Spacer()
                         if store.updateAvailable(entry) {
                             if store.downloadedFile(for:entry) != nil {
-                                Button("Ouvrir le paquet") { store.openDownloaded(entry) }
+                                Button("Installer") { operations.enqueue([entry],store:store) }
                                     .buttonStyle(.borderedProminent)
                             } else {
-                                Button("Télécharger et ouvrir") { Task { await store.installCandidate(entry) } }
+                                Button("Installer") { operations.enqueue([entry],store:store) }
                                     .buttonStyle(.borderedProminent)
                                     .disabled(store.downloading.contains(entry.repo))
                             }
@@ -652,7 +662,7 @@ struct StoreWindow: View {
     }
 }
 
-struct CatalogDetails: View {
+struct LegacyCatalogDetails: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var store: StoreModel
     @State private var chosenEcosystem: Ecosystem?
