@@ -1,0 +1,30 @@
+# Swift and Xcode
+.build/
+.swiftpm/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Generated packages
+dist/
+.DS_Store
+*.dSYM/
+*.xcarchive
+*.ipa
+*.dmg
+
+# Secrets and signing material
+.env
+.env.*
+*.p8
+*.p12
+*.mobileprovision
+*.key
+*.pem
+*.cer
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*~
