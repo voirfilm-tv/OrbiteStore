@@ -35,6 +35,17 @@ class AssetClassificationTests(unittest.TestCase):
         self.assertEqual(catalog.classify_audience(
             {"full_name":"godotengine/godot","name":"Godot","description":"Game engine"}, "Développement","Godot-macos.zip"),"developer")
 
+    def test_rejects_installer_marked_not_for_use(self):
+        self.assertFalse(catalog.is_macos_asset("LosslessCut-mac-DONT-USE.pkg"))
+        self.assertFalse(catalog.is_macos_asset("NotAnApp-macos-dSYM.zip"))
+
+    def test_editorial_priority_is_not_package_verification(self):
+        self.assertGreater(catalog.FEATURED_REPOS.get("openrct2/openrct2",0),0)
+        self.assertFalse(catalog.is_macos_asset("OpenRCT2-source.zip"))
+        self.assertIn(catalog.classify_audience(
+            {"full_name":"storytold/photocraft","name":"PhotoCraft","description":"photo editor"},
+            "Graphisme","photocraft-macos.dmg"),("consumer",))
+
     def test_generic_zip_not_verified(self):
         self.assertFalse(catalog.is_macos_asset("release.zip"))
 
