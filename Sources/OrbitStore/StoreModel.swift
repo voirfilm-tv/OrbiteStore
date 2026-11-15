@@ -321,7 +321,6 @@ final class StoreModel: ObservableObject {
             Task { @MainActor in self?.scan() }
         }
         Task {
-            await loadIndexedCatalog()
             await refresh()
             await loadObsidianCount()
         }
