@@ -340,7 +340,25 @@ struct StoreWindow: View {
                          : "Une sélection d'applications macOS prêtes à télécharger, pour tous.")
                     .foregroundStyle(.secondary)
             }
-            if section == "Découvrir" || section == "Tout" { banner }
+            if section == "Découvrir" || section == "Tout" {
+                banner
+                LazyVGrid(columns:[GridItem(.adaptive(minimum:205),spacing:12)],spacing:12) {
+                    OrbitCategoryShortcut(title:"Alternatives",subtitle:"Libres, sans abonnement",
+                                          icon:"arrow.triangle.branch",color:.purple) { section="Alternatives" }
+                    OrbitCategoryShortcut(title:"Auto-hébergé",subtitle:"Tes services, tes données",
+                                          icon:"server.rack",color:.teal) { section="Auto-hébergé" }
+                    OrbitCategoryShortcut(title:"Jeux",subtitle:"Jouer sur ton Mac",
+                                          icon:"gamecontroller.fill",color:.orange) { section="Jeux" }
+                    OrbitCategoryShortcut(title:"Multimédia",subtitle:"Films, vidéo et musique",
+                                          icon:"play.rectangle.fill",color:.blue) { section="Multimédia" }
+                }
+                OrbitFeaturedStrip(
+                    entries:OrbitCollections.featured.compactMap { repo in
+                        store.catalog.first(where:{$0.repo.caseInsensitiveCompare(repo) == .orderedSame})
+                    },
+                    store:store,
+                    open:{ selected=$0 })
+            }
             if section == "Jeux" {
                 HStack(spacing:14) {
                     Image(systemName:"gamecontroller.fill").font(.title).foregroundStyle(.indigo)
@@ -370,7 +388,7 @@ struct StoreWindow: View {
                     .disabled(store.busy || store.indexLoading)
             }
             HStack {
-                Label(section == "Jeux" ? "Jeux pour macOS" : "Applications à découvrir",systemImage:"star.fill").font(.title2.bold())
+                Label(section == "Jeux" ? "Jeux à découvrir" : "Explorer le catalogue",systemImage:"square.grid.2x2.fill").font(.title2.bold())
                 Spacer()
                 Text("\(filtered.count) applications").font(.subheadline).foregroundStyle(.secondary)
             }
@@ -537,34 +555,58 @@ struct StoreWindow: View {
 
     private var banner: some View {
         ZStack(alignment:.leading) {
-            LinearGradient(
-                colors:[Color(red:0.10,green:0.16,blue:0.38),Color(red:0.35,green:0.24,blue:0.61),Color(red:0.10,green:0.11,blue:0.28)],
-                startPoint:.topLeading,endPoint:.bottomTrailing)
-            HStack {
+            LinearGradient(colors:[Color(red:0.08,green:0.10,blue:0.23),
+                                   Color(red:0.22,green:0.18,blue:0.44),
+                                   Color(red:0.37,green:0.24,blue:0.46)],
+                           startPoint:.topLeading,endPoint:.bottomTrailing)
+            Circle().stroke(.white.opacity(0.12),lineWidth:1)
+                .frame(width:330,height:330).offset(x:660,y:-65)
+            Circle().stroke(.white.opacity(0.08),lineWidth:1)
+                .frame(width:460,height:460).offset(x:590,y:-112)
+            HStack(spacing:20) {
                 VStack(alignment:.leading,spacing:13) {
-                    Text("L'UNIVERS DES APPLICATIONS").tracking(1.5)
-                        .font(.caption.bold()).foregroundStyle(.white.opacity(0.7))
-                    Text("Découvre les logiciels.\nExplore leurs extensions.")
-                        .font(.system(size:30,weight:.bold,design:.rounded))
+                    Label("DÉCOUVERTE MAC · LOGICIELS LIBRES",systemImage:"sparkles")
+                        .tracking(1.0).font(.caption2.bold())
+                        .foregroundStyle(.white.opacity(0.80))
+                    Text("Des apps qui donnent\nenvie d'explorer.")
+                        .font(.system(size:34,weight:.bold,design:.rounded))
                         .foregroundStyle(.white)
-                    Text("Une bibliothèque conçue pour ton Mac.")
-                        .foregroundStyle(.white.opacity(0.8))
-                    Button("Explorer les écosystèmes") { section = "Écosystèmes" }
-                        .buttonStyle(.borderedProminent).tint(.white).foregroundStyle(.black)
+                        .fixedSize(horizontal:false,vertical:true)
+                    Text("Des alternatives, des jeux et des pépites à installer.\nUn catalogue pensé pour les vrais utilisateurs.")
+                        .font(.subheadline).foregroundStyle(.white.opacity(0.80))
+                        .fixedSize(horizontal:false,vertical:true)
+                    HStack(spacing:9) {
+                        Button("Voir les alternatives") { section="Alternatives" }
+                            .buttonStyle(.borderedProminent).tint(.white).foregroundStyle(.black)
+                        Button("Explorer les jeux") { section="Jeux" }
+                            .buttonStyle(.bordered).tint(.white)
+                    }
                 }
-                Spacer()
-                ZStack {
-                    Circle().stroke(.white.opacity(0.14),lineWidth:1).frame(width:220,height:220)
-                    Circle().stroke(.white.opacity(0.23),lineWidth:1).frame(width:164,height:164)
-                    Image(systemName:"square.stack.3d.up.fill")
-                        .font(.system(size:95)).foregroundStyle(.white.opacity(0.87))
-                    Image(systemName:"puzzlepiece.extension.fill")
-                        .font(.system(size:34)).foregroundStyle(.white).offset(x:81,y:-61)
-                }.frame(width:230)
+                Spacer(minLength:0)
+                VStack(alignment:.trailing,spacing:-21) {
+                    HStack(spacing:-14) {
+                        heroIcon("iina/iina","IINA",69)
+                        heroIcon("HandBrake/HandBrake","HandBrake",65)
+                    }
+                    HStack(spacing:-12) {
+                        heroIcon("storytold/photocraft","PhotoCraft",69)
+                        heroIcon("OpenRCT2/OpenRCT2","OpenRCT2",72)
+                    }
+                }
+                .frame(maxWidth:175)
+                .padding(.trailing,8)
             }.padding(28)
         }
-        .frame(height:245)
-        .clipShape(RoundedRectangle(cornerRadius:22))
+        .frame(minHeight:276)
+        .clipShape(RoundedRectangle(cornerRadius:23))
+    }
+
+    private func heroIcon(_ repo:String,_ name:String,_ size:CGFloat)->some View {
+        AuthenticAppIcon(repo:repo,name:name,size:size)
+            .padding(8)
+            .background(.regularMaterial,in:RoundedRectangle(cornerRadius:19))
+            .rotationEffect(.degrees(repo.contains("OpenRCT2") ? 7 : -5))
+            .shadow(color:.black.opacity(0.26),radius:13,y:8)
     }
 
     private func appTile(_ entry:CatalogApp)->some View {
