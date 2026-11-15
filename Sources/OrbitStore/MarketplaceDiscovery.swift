@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import Foundation
+import CryptoKit
 
 // GitHub is a discovery source, not a guarantee that a repository ships a macOS application.
 struct GitHubHit: Decodable, Identifiable {
@@ -215,43 +216,96 @@ actor RepositoryLogoService {
     static let shared = RepositoryLogoService()
     private var cache: [String: Data] = [:]
     private var unavailable = Set<String>()
+    private var activeRequests = 0
+    private var inFlight:[String:Task<Data?,Never>] = [:]
+    private let maxActiveRequests = 4
 
-    func imageData(repo: String, branch: String?, homepage: String?) async -> Data? {
-        if let existing = cache[repo] { return existing }
-        let lookupKey = repo + "|" + (homepage ?? "")
-        if unavailable.contains(lookupKey) { return nil }
-        guard repo.split(separator: "/").count == 2 else { return nil }
-        let bases = [branch ?? "main", "main", "master"]
-        for base in Array(Set(bases)) {
-            let readmeURL = URL(string: "https://raw.githubusercontent.com/\(repo)/\(base)/README.md")!
-            guard let markdownData = try? await MarketplaceHTTP.fetch(readmeURL, accept: "text/plain"),
-                  let markdown = String(data: markdownData, encoding: .utf8) else { continue }
-            let candidates = Self.logoCandidates(markdown: markdown, repo: repo, branch: base)
-            for url in candidates.prefix(5) {
-                guard let imageData = try? await MarketplaceHTTP.fetch(url, accept: "image/*"),
-                      imageData.count < 4_000_000,
-                      NSImage(data: imageData) != nil else { continue }
-                cache[repo] = imageData
-                return imageData
+    private var diskFolder:URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Caches/OrbitStore/AppIcons",isDirectory:true)
+    }
+    private func filename(_ repo:String)->URL {
+        let key=SHA256.hash(data:Data(repo.lowercased().utf8))
+            .map{String(format:"%02x",$0)}.joined()
+        return diskFolder.appendingPathComponent(key+".png")
+    }
+    private func loadDisk(_ repo:String)->Data? {
+        let path=filename(repo)
+        guard let data=try? Data(contentsOf:path),data.count<3_000_000,
+              NSImage(data:data) != nil else { return nil }
+        return data
+    }
+    private func saveDisk(_ bytes:Data,repo:String) {
+        try? FileManager.default.createDirectory(at:diskFolder,withIntermediateDirectories:true)
+        try? bytes.write(to:filename(repo),options:.atomic)
+    }
+
+    func imageData(repo:String,branch:String?,homepage:String?) async -> Data? {
+        if let cached=cache[repo] { return cached }
+        if let persisted=loadDisk(repo) {
+            cache[repo]=persisted
+            return persisted
+        }
+        if let pending=inFlight[repo] { return await pending.value }
+        let task=Task<Data?,Never> {
+            await self.fetchLimited(repo:repo,branch:branch,homepage:homepage)
+        }
+        inFlight[repo]=task
+        let result=await task.value
+        inFlight.removeValue(forKey:repo)
+        return result
+    }
+
+    private func fetchLimited(repo:String,branch:String?,homepage:String?) async -> Data? {
+        while activeRequests >= maxActiveRequests {
+            try? await Task.sleep(nanoseconds:150_000_000)
+            if Task.isCancelled { return nil }
+        }
+        activeRequests += 1
+        defer { activeRequests -= 1 }
+        let key=repo+"|"+(homepage ?? "")
+        guard !unavailable.contains(key),repo.split(separator:"/").count==2 else {return nil}
+        // A persistent failure TTL protects against re-downloading a missing
+        // logo on every launch, without caching failures indefinitely.
+        let retryKey="orbit.icon.miss."+repo.lowercased()
+        let retry=UserDefaults.standard.double(forKey:retryKey)
+        if retry > Date().timeIntervalSince1970 { return nil }
+
+        let branches=Array(NSOrderedSet(array:[branch ?? "main","main","master"])) as? [String] ?? ["main","master"]
+        for candidateBranch in branches {
+            if Task.isCancelled { return nil }
+            guard let readmeURL=URL(string:"https://raw.githubusercontent.com/\(repo)/\(candidateBranch)/README.md"),
+                  let markdownData=try? await MarketplaceHTTP.fetch(readmeURL,accept:"text/plain"),
+                  markdownData.count<1_000_000,
+                  let markdown=String(data:markdownData,encoding:.utf8) else {continue}
+            let candidates=Self.logoCandidates(markdown:markdown,repo:repo,branch:candidateBranch)
+            for imageURL in candidates.prefix(3) {
+                if Task.isCancelled { return nil }
+                guard let bytes=try? await MarketplaceHTTP.fetch(imageURL,accept:"image/*"),
+                      bytes.count<2_500_000,NSImage(data:bytes) != nil else {continue}
+                cache[repo]=bytes
+                saveDisk(bytes,repo:repo)
+                return bytes
             }
         }
-        if let homepageURL = URL(string: homepage ?? ""), homepageURL.scheme == "https",
-           let host = homepageURL.host, host != "github.com",
-           !host.hasSuffix(".github.com") {
-            var parts = URLComponents()
-            parts.scheme = "https"
-            parts.host = host
-            for iconPath in ["/apple-touch-icon.png", "/favicon.png", "/favicon.ico"] {
-                parts.path = iconPath
-                guard let iconURL = parts.url,
-                      let data = try? await MarketplaceHTTP.fetch(iconURL, accept: "image/*"),
-                      data.count < 2_000_000,
-                      NSImage(data: data) != nil else { continue }
-                cache[repo] = data
-                return data
+        if let home=URL(string:homepage ?? ""),home.scheme=="https",
+           let host=home.host,host != "github.com",!host.hasSuffix(".github.com") {
+            var url=URLComponents()
+            url.scheme="https"
+            url.host=host
+            for path in ["/apple-touch-icon.png","/favicon.png","/favicon.ico"] {
+                url.path=path
+                guard let candidate=url.url,
+                      let bytes=try? await MarketplaceHTTP.fetch(candidate,accept:"image/*"),
+                      bytes.count<1_500_000,NSImage(data:bytes) != nil else {continue}
+                cache[repo]=bytes
+                saveDisk(bytes,repo:repo)
+                return bytes
             }
         }
-        unavailable.insert(lookupKey)
+        unavailable.insert(key)
+        UserDefaults.standard.set(Date().addingTimeInterval(12*3600).timeIntervalSince1970,
+                                  forKey:retryKey)
         return nil
     }
 
