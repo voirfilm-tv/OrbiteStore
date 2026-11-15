@@ -269,6 +269,21 @@ struct StoreWindow: View {
                 Spacer()
                 Text("\(filtered.count) projets").font(.subheadline).foregroundStyle(.secondary)
             }
+            HStack(spacing:10) {
+                Label("Filtres",systemImage:"line.3.horizontal.decrease")
+                    .font(.caption).foregroundStyle(.secondary)
+                Picker("Présence",selection:$catalogPresence) {
+                    Text("Toutes").tag("Toutes")
+                    Text("Installées").tag("Installées")
+                    Text("Non installées").tag("Non installées")
+                }.pickerStyle(.menu).frame(width:160)
+                Picker("Trier",selection:$catalogSort) {
+                    Text("Sélection").tag("Sélection")
+                    Text("Nom A–Z").tag("Nom A–Z")
+                    Text("★ GitHub").tag("★ GitHub")
+                }.pickerStyle(.menu).frame(width:155)
+                Spacer()
+            }
             LazyVGrid(columns:columns,alignment:.leading,spacing:14) {
                 ForEach(filtered) { entry in
                     Button { selected=entry } label: { appTile(entry) }
@@ -308,19 +323,39 @@ struct StoreWindow: View {
             HStack {
                 Text("Sur GitHub").font(.title2.bold())
                 Spacer()
-                Text("\(discovery.results.count) dépôts reçus")
+                Text("\(visibleGitHubHits.count) / \(discovery.results.count) dépôts affichés")
                     .font(.caption).foregroundStyle(.secondary)
+            }
+            HStack(spacing:10) {
+                Label("Filtres",systemImage:"line.3.horizontal.decrease")
+                    .font(.caption).foregroundStyle(.secondary)
+                Picker("Afficher",selection:$remoteFilter) {
+                    Text("Tous").tag("Tous")
+                    Text("Avec licence").tag("Avec licence")
+                    Text("≥ 100 étoiles").tag("≥ 100 étoiles")
+                    Text("≥ 1 000 étoiles").tag("≥ 1 000 étoiles")
+                    Text("Installées").tag("Installées")
+                }.pickerStyle(.menu).frame(width:165)
+                Picker("Trier",selection:$remoteSort) {
+                    Text("Pertinence").tag("Pertinence")
+                    Text("★ GitHub").tag("★ GitHub")
+                    Text("Nom A–Z").tag("Nom A–Z")
+                }.pickerStyle(.menu).frame(width:150)
+                Spacer()
             }
             if let error=discovery.error {
                 Label(error,systemImage:"exclamationmark.triangle")
                     .foregroundStyle(.orange)
                 Text("GitHub limite les recherches anonymes. Patiente quelques minutes si nécessaire.")
                     .font(.caption).foregroundStyle(.secondary)
-            } else if !discovery.loading && discovery.results.isEmpty {
-                Text("Aucun dépôt trouvé pour cette recherche.").foregroundStyle(.secondary)
+            } else if !discovery.loading && visibleGitHubHits.isEmpty {
+                Text(discovery.results.isEmpty
+                     ? "Aucun dépôt trouvé pour cette recherche."
+                     : "Aucun dépôt ne correspond à ces filtres.")
+                    .foregroundStyle(.secondary)
             } else {
                 LazyVStack(spacing:10) {
-                    ForEach(discovery.results) { hit in
+                    ForEach(visibleGitHubHits) { hit in
                         Button {
                             selected=CatalogApp(repo:hit.full_name,name:hit.name,
                                 category:"Dépôts GitHub",icon:"shippingbox",aliases:[])
@@ -427,7 +462,28 @@ struct StoreWindow: View {
                 Spacer()
                 Button("Réanalyser") { store.scan() }
             }
-            ForEach(store.installed.filter{search.isEmpty || $0.name.localizedCaseInsensitiveContains(search)}) { app in
+            HStack(spacing:10) {
+                Label("Filtres",systemImage:"line.3.horizontal.decrease")
+                    .font(.caption).foregroundStyle(.secondary)
+                Picker("Afficher",selection:$installedScope) {
+                    Text("Toutes").tag("Toutes")
+                    Text("Extensions connues").tag("Extensions connues")
+                    Text("Autres applications").tag("Autres applications")
+                    Text("Système").tag("Système")
+                }.pickerStyle(.menu).frame(width:190)
+                Picker("Trier",selection:$installedSort) {
+                    Text("Nom A–Z").tag("A–Z")
+                    Text("Nom Z–A").tag("Z–A")
+                }.pickerStyle(.menu).frame(width:125)
+                Spacer()
+                Text("\(visibleInstalled.count) affichées")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if visibleInstalled.isEmpty {
+                Text("Aucune application ne correspond à ces filtres.")
+                    .foregroundStyle(.secondary).frame(maxWidth:.infinity,minHeight:100)
+            }
+            ForEach(visibleInstalled) { app in
                 Button { selectedInstalled=app } label: {
                     HStack(spacing:13) {
                         Image(nsImage:NSWorkspace.shared.icon(forFile:app.path))
@@ -459,8 +515,27 @@ struct StoreWindow: View {
             Text("Écosystèmes").font(.system(size:33,weight:.bold,design:.rounded))
             Text("Plugins, thèmes et applications complémentaires. La compatibilité dépend de chaque version du logiciel hôte.")
                 .foregroundStyle(.secondary)
+            HStack(spacing:10) {
+                Label("Filtres",systemImage:"line.3.horizontal.decrease")
+                    .font(.caption).foregroundStyle(.secondary)
+                Picker("Afficher",selection:$ecosystemScope) {
+                    Text("Tous").tag("Tous")
+                    Text("Logiciels installés").tag("Logiciels installés")
+                    Text("Registres officiels").tag("Registres officiels")
+                    Text("Découverte GitHub").tag("Découverte GitHub")
+                }.pickerStyle(.menu).frame(width:190)
+                Picker("Trier",selection:$ecosystemSort) {
+                    Text("Nom A–Z").tag("A–Z")
+                    Text("Nombre recensé").tag("Nombre recensé")
+                }.pickerStyle(.menu).frame(width:160)
+                Spacer()
+            }
+            if visibleEcosystems.isEmpty {
+                Text("Aucun écosystème ne correspond à ces filtres.")
+                    .foregroundStyle(.secondary)
+            }
             LazyVGrid(columns:columns,spacing:15) {
-                ForEach(Ecosystems.all) { ecosystem in
+                ForEach(visibleEcosystems) { ecosystem in
                     VStack(alignment:.leading,spacing:13) {
                         HStack {
                             Image(systemName:"puzzlepiece.extension.fill")
@@ -498,12 +573,26 @@ struct StoreWindow: View {
                 Button("Vérifier") { Task { await store.checkUpdates() } }
                     .buttonStyle(.borderedProminent)
             }
-            let entries=Inventory.catalog.filter { !store.matches($0).isEmpty }
+            HStack(spacing:10) {
+                Label("Filtres",systemImage:"line.3.horizontal.decrease")
+                    .font(.caption).foregroundStyle(.secondary)
+                Picker("Afficher",selection:$updatesScope) {
+                    Text("Toutes").tag("Toutes")
+                    Text("Disponibles").tag("Disponibles")
+                    Text("Non vérifiées").tag("Non vérifiées")
+                }.pickerStyle(.menu).frame(width:165)
+                Picker("Trier",selection:$updatesSort) {
+                    Text("Nom A–Z").tag("A–Z")
+                    Text("★ GitHub").tag("★ GitHub")
+                }.pickerStyle(.menu).frame(width:140)
+                Spacer()
+            }
+            let entries=visibleUpdates
             if entries.isEmpty {
                 VStack(spacing:12) {
                     Image(systemName:"checkmark.circle").font(.largeTitle).foregroundStyle(.secondary)
-                    Text("Aucune application GitHub reconnue").font(.headline)
-                    Text("Les applications installées apparaîtront ici lorsqu'une correspondance fiable sera identifiée.")
+                    Text(updatesScope == "Toutes" ? "Aucune application GitHub reconnue" : "Aucun résultat pour ce filtre").font(.headline)
+                    Text("Les vérifications concernent uniquement les projets identifiés et leurs releases macOS.")
                         .font(.caption).foregroundStyle(.secondary)
                 }.frame(maxWidth:.infinity,minHeight:170)
             } else {
