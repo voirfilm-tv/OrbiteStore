@@ -21,6 +21,38 @@ final class OrbitVersionTests: XCTestCase {
         XCTAssertFalse(OrbitArchivePolicy.isSafeEntry("/absolute/path"))
         XCTAssertFalse(OrbitArchivePolicy.isSafeEntry("folder\\..\\secret"))
     }
+    func testUnsignedApplicationCannotBeInstalledSilently() throws {
+        let fm=FileManager.default
+        let root=fm.temporaryDirectory.appendingPathComponent("OrbitTests-\(UUID().uuidString)",isDirectory:true)
+        defer { try? fm.removeItem(at:root) }
+        let contents=root.appendingPathComponent("Unsigned.app/Contents",isDirectory:true)
+        let executable=contents.appendingPathComponent("MacOS",isDirectory:true)
+        try fm.createDirectory(at:executable,withIntermediateDirectories:true)
+        let metadata:[String:Any]=[
+            "CFBundleIdentifier":"org.example.unsigned-test",
+            "CFBundleExecutable":"Unsigned",
+            "CFBundlePackageType":"APPL",
+            "CFBundleVersion":"1"
+        ]
+        let data=try PropertyListSerialization.data(fromPropertyList:metadata,format:.xml,options:0)
+        try data.write(to:contents.appendingPathComponent("Info.plist"))
+        let script=executable.appendingPathComponent("Unsigned")
+        try Data("#!/bin/sh\nexit 0\n".utf8).write(to:script)
+        try fm.setAttributes([.posixPermissions:0o755],ofItemAtPath:script.path)
+        let package=root.appendingPathComponent("Unsigned.zip")
+        let proc=Process()
+        proc.executableURL=URL(fileURLWithPath:"/usr/bin/ditto")
+        proc.arguments=["-c","-k",root.appendingPathComponent("Unsigned.app").path,package.path]
+        try proc.run()
+        proc.waitUntilExit()
+        XCTAssertEqual(proc.terminationStatus,0)
+        let target=root.appendingPathComponent("Output",isDirectory:true)
+        XCTAssertThrowsError(try OrbitPackageInstaller.install(
+            package:package,targetDirectory:target,
+            expectedBundleID:"org.example.unsigned-test",runningBundleIDs:[]))
+        XCTAssertFalse(fm.fileExists(atPath:target.appendingPathComponent("Unsigned.app").path))
+    }
+
     func testRepositoryIdentifiers() {
         XCTAssertNil(CatalogApp.fromRepositoryName("invalid-repo",name:"Invalid"))
         XCTAssertEqual(CatalogApp.fromRepositoryName("voirfilm-tv/OrbiteStore",name:"OrbitStore")?.repo,
