@@ -249,7 +249,7 @@ struct StoreWindow: View {
                         case "Installations": OrbitQueuePage().environmentObject(store).environmentObject(operations)
                         case "Historique": OrbitHistoryPage().environmentObject(operations)
                         case "Préférences": PreferencesPanel()
-                        case "Alternatives": OrbitEditorialPage(kind:.alternatives,query:$search)
+                        case "Alternatives": OrbitAlternativesPage(query:$search)
                             .environmentObject(store).environmentObject(operations)
                         case "Auto-hébergé": OrbitEditorialPage(kind:.hosted,query:$search)
                             .environmentObject(store).environmentObject(operations)
@@ -392,9 +392,8 @@ struct StoreWindow: View {
                 }
                 .padding(15).background(Color.indigo.opacity(0.07),in:RoundedRectangle(cornerRadius:14))
             }
-            if search.isEmpty && catalogPresence=="Toutes" &&
-               ["Découvrir","Tout","Jeux","Bureautique"].contains(section) {
-                OrbitSpotlightShelf(section:section,gameGenre:gameGenre)
+            if catalogPresence=="Toutes" {
+                OrbitSpotlightShelf(section:section,gameGenre:gameGenre,query:search)
             }
             HStack {
                 OrbitStatusPill(text:store.developerMode ? "Mode développeur" : "Grand public",
@@ -417,7 +416,7 @@ struct StoreWindow: View {
             HStack {
                 Label(section == "Jeux" ? "Jeux à découvrir" : "Explorer le catalogue",systemImage:"square.grid.2x2.fill").font(.title2.bold())
                 Spacer()
-                Text("\(filtered.count) applications").font(.subheadline).foregroundStyle(.secondary)
+                Text("\(filtered.count) paquets GitHub").font(.subheadline).foregroundStyle(.secondary)
             }
             HStack(spacing:10) {
                 Label("Filtres",systemImage:"line.3.horizontal.decrease")
