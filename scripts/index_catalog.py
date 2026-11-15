@@ -85,8 +85,13 @@ def classify(category: str, repo: dict, seeded: bool) -> str:
     name = ((repo.get("name") or "") + " " + (repo.get("description") or "")).lower()
     if topics.intersection(ENGINE_HINTS) or "game engine" in name:
         return "Développement"
+    # Runnable game engines requiring proprietary data and game-porting tools
+    # are not standalone games; keep them out of the playable games category.
     if topics.intersection(LAUNCHER_HINTS) or any(token in name for token in
-            ("emulator", "emulation", "launcher", "minecraft launcher", "frontend for")):
+            ("emulator", "emulation", "launcher", "minecraft launcher",
+             "frontend for", "port builder", "porting tool", "one-click macos app",
+             "open-source engine for", "source engine for", "game assets required",
+             "bring your own game")):
         return "Lanceurs & émulation"
     return category
 
