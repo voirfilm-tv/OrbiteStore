@@ -260,6 +260,7 @@ final class OrbitOperations: ObservableObject {
     @Published var history:[OrbitHistoryEvent]=[]
     @Published var jobs:[OrbitJob]=[]
     @Published var diagnoses:[String:OrbitDiagnosis]=[:]
+    @Published var pluginStatus:[String:String]=[:]
     @Published var sources:[String:[OrbitSource]] = [:]
     @Published var ignoredVersions:[String:String] = [:]
     @Published var receipts:[String:OrbitInstallReceipt] = [:]
