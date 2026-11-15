@@ -21,6 +21,9 @@ Screenshots of the actual running macOS application. / Captures authentiques de 
 ### Discover / Découvrir
 ![OrbitStore actual Discover screen](docs/screenshots/discover.png)
 
+### Installed / Installées
+![OrbitStore running on macOS showing detected installed applications](docs/screenshots/installed.png)
+
 ### Ecosystems / Écosystèmes
 ![OrbitStore actual ecosystem directory](docs/screenshots/ecosystems.png)
 
