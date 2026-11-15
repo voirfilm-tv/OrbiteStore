@@ -32,9 +32,9 @@ Screenshots of the actual running macOS application. / Captures authentiques de 
 
 ### About
 
-OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It brings together a curated GitHub software catalog, live repository search, installed-app discovery, extensions and GitHub releases. This is an **early alpha (v0.2.0)**, not yet a complete package manager.
+OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It brings together a curated GitHub software catalog, live repository search, installed-app discovery, extensions and GitHub releases. This is an **early alpha (v0.2.1)**, not yet a complete package manager.
 
-### Implemented in v0.2.0
+### Implemented in v0.2.1
 
 - Native catalog: Discover, Installed, Ecosystems, Updates and expanded categories, including **Games**.
 - Live GitHub repository search and GitHub star counts (**popularity, not user reviews or a security rating**).
@@ -43,6 +43,14 @@ OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It b
 - Real app icons for locally installed applications; best-effort repository or official-website imagery, neutral fallback otherwise.
 - GitHub release checks for known apps and optional package **download**; SHA-256 is checked when GitHub supplies a digest.
 - Optional extension discovery notifications for newly detected applications.
+
+
+### 0.2.1 · GitHub releases compatibility fix
+
+- A repository detail now checks actual release assets before displaying a macOS download button.
+- GitHub pre-releases are supported and explicitly labeled as preview downloads; the `/releases/latest` endpoint omits them.
+- Projects without a recognized macOS package show a clear, non-blocking explanation instead of a misleading network error.
+- Files named as Windows/Linux packages, source archives or incompatible CPU architectures are excluded from suggested macOS downloads.
 
 ### Current limitations
 
@@ -54,7 +62,7 @@ OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It b
 
 ### Download and build
 
-[Download the experimental v0.2.0 DMG](https://github.com/voirfilm-tv/OrbiteStore/releases/tag/v0.2.0)
+[Download the experimental v0.2.1 DMG](https://github.com/voirfilm-tv/OrbiteStore/releases/tag/v0.2.1)
 
 Build from source on macOS 13+ with the free Xcode Command Line Tools:
 
@@ -65,7 +73,7 @@ swift build -c release
 bash scripts/build-dmg.sh
 ~~~
 
-Output: dist/OrbitStore-0.2.0-unsigned.dmg. Do **not** disable Gatekeeper globally.
+Output: dist/OrbitStore-0.2.1-unsigned.dmg. Do **not** disable Gatekeeper globally.
 
 ### Contribute
 
@@ -83,7 +91,7 @@ Start with the [contributing guide](CONTRIBUTING.md), [open tasks](https://githu
 
 OrbitStore est une **application native SwiftUI pour macOS 13+**, développée en open source. Elle permet de découvrir des projets GitHub, consulter des dépôts en direct, retrouver les logiciels installés sur le Mac et explorer leurs extensions.
 
-**Version actuelle : alpha 0.2.0.** Il ne s'agit pas encore d'un gestionnaire d'installation universel.
+**Version actuelle : alpha 0.2.1.** Il ne s'agit pas encore d'un gestionnaire d'installation universel.
 
 **Déjà disponible :** catalogue et catégories dont **Jeux**, recherche GitHub réelle, nombre d'étoiles GitHub (popularité uniquement), inventaire des applications installées y compris propriétaires, consultation interne de catalogues d'extensions, icônes authentiques quand elles sont disponibles, vérification de releases et téléchargement de certains paquets.
 
