@@ -9,6 +9,7 @@ on:
     paths:
       - "scripts/index_catalog.py"
       - "scripts/catalog-seeds.json"
+      - "tests/test_catalog_index.py"
       - ".github/workflows/catalog-index.yml"
 
 permissions:
@@ -57,4 +58,5 @@ jobs:
             exit 0
           fi
           git commit -m "data: refresh verified macOS catalog [skip ci]"
+          git pull --rebase origin main
           git push origin HEAD:main
