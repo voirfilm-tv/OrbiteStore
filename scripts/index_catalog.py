@@ -62,6 +62,10 @@ SEARCHES = [
     ("Sécurité", "topic:macos topic:security stars:>100 archived:false"),
     ("Réseau", "topic:macos topic:network stars:>100 archived:false"),
     ("Bureautique", "topic:macos topic:notes stars:>100 archived:false"),
+    ("Bureautique", "topic:macos topic:office stars:>100 archived:false"),
+    ("Bureautique", "topic:markdown-editor topic:macos stars:>100 archived:false"),
+    ("Bureautique", "topic:note-taking topic:macos stars:>100 archived:false"),
+    ("Bureautique", "desktop office editor macOS in:description stars:>100 archived:false"),
     ("Éducation", "topic:macos topic:education stars:>100 archived:false"),
     ("Personnalisation", "topic:macos topic:customization stars:>100 archived:false"),
     ("Utilitaires", "macos app in:description stars:>1500 archived:false"),
@@ -76,19 +80,133 @@ ENGINE_HINTS = ("game-engine", "game-development", "game-framework", "engine")
 GOOD_LICENSES = None  # No license based gate: license remains visible in UI.
 # A small editorial weight improves discovery; it does not override release
 # verification. New entries must still publish a macOS package.
+# Editorial relevance is deliberately not interchangeable with GitHub stars.
+# Only verified macOS release assets reach the installable feed.
 FEATURED_REPOS = {
-    "iina/iina":100,"handbrake/handbrake":96,"localsend/localsend":98,
-    "storytold/photocraft":92,"storytold/vectorcraft":86,
-    "storytold/filmcraft":84,"storytold/pdfcraft":86,
-    "simohypers/limusic":95,"darktable-org/darktable":90,
-    "actualbudget/actual":92,"mifi/lossless-cut":91,
-    "openrct2/openrct2":97,"openttd/openttd":96,
-    "supertuxkart/stk-code":97,"ppy/osu":95,
-    "widelands/widelands":92,"wesnoth/wesnoth":92,
-    "mindustrygame/mindustry":91,"ddnet/ddnet":94,
-    "exelban/stats":90,"keepassxreboot/keepassxc":90,
-    "rustdesk/rustdesk":90,
+    "supertuxkart/stk-code":125, "openra/openra":124,
+    "wesnoth/wesnoth":122, "warzone2100/warzone2100":121,
+    "openttd/openttd":119, "mindustrygame/mindustry":118,
+    "widelands/widelands":117, "endless-sky/endless-sky":115,
+    "supertux/supertux":114, "freeorion/freeorion":112,
+    "beyond-all-reason/beyond-all-reason":111,
+    "hedgewars/hw":110, "openrct2/openrct2":105,
+    "ddnet/ddnet":103, "ppy/osu":99,
+    "iina/iina":115, "handbrake/handbrake":113,
+    "localsend/localsend":116, "obsproject/obs-studio":116,
+    "jgraph/drawio-desktop":121, "obsidianmd/obsidian-releases":119,
+    "logseq/logseq":117, "zettlr/zettlr":115,
+    "marktext/marktext":112, "toeverything/affine":113,
+    "koodo-reader/koodo-reader":108,
+    "appflowy-io/appflowy":112, "laurent22/joplin":114,
+    "standardnotes/app":110, "siyuan-note/siyuan":109,
+    "storytold/photocraft":95, "storytold/vectorcraft":94,
+    "storytold/filmcraft":92, "storytold/pdfcraft":93,
+    "simohypers/limusic":96, "darktable-org/darktable":107,
+    "actualbudget/actual":109, "mifi/lossless-cut":107,
+    "exelban/stats":106, "keepassxreboot/keepassxc":110,
+    "rustdesk/rustdesk":108,
 }
+
+# Genre taxonomy is about what a game offers, not its source-code tags.
+GAME_GENRES = {
+    "supertuxkart/stk-code":"Course", "openra/openra":"Stratégie",
+    "wesnoth/wesnoth":"Stratégie", "warzone2100/warzone2100":"Stratégie",
+    "mindustrygame/mindustry":"Stratégie", "beyond-all-reason/beyond-all-reason":"Stratégie",
+    "openttd/openttd":"Gestion", "widelands/widelands":"Gestion",
+    "openrct2/openrct2":"Gestion", "openloco/openloco":"Gestion",
+    "freeorion/freeorion":"Stratégie", "0ad/0ad":"Stratégie",
+    "endless-sky/endless-sky":"Simulation", "hedgewars/hw":"Stratégie",
+    "supertux/supertux":"Action", "ddnet/ddnet":"Action",
+    "ppy/osu":"Rythme", "shatteredpixel/shattered-pixel-dungeon":"Rôle",
+    "cleverraven/cataclysm-dda":"Rôle", "crawl/crawl":"Rôle",
+    "luanti-org/luanti":"Simulation", "classicube/classicube":"Simulation",
+}
+# Explicit reviewed path: unlike README badges, this is a real app icon.
+ICON_PATH_HINTS = {
+    "supertuxkart/stk-code":"data/supertuxkart_512.png",
+}
+MAX_ICON_SCANS = 36
+ICON_RECHECK_DAYS = 35
+
+
+def game_genre(repo: str, category: str, description: str = "") -> str | None:
+    if category != "Jeux":
+        return None
+    key = repo.casefold()
+    if key in GAME_GENRES:
+        return GAME_GENRES[key]
+    words = description.casefold()
+    if any(k in words for k in ("chess", "board game", "tabletop", "cards")):
+        return "Jeux de plateau"
+    if any(k in words for k in ("strategy", "rts", "turn-based", "tactical", "warfare")):
+        return "Stratégie"
+    if any(k in words for k in ("city builder", "management", "tycoon", "colony")):
+        return "Gestion"
+    if any(k in words for k in ("racing", "kart")):
+        return "Course"
+    if any(k in words for k in ("role-playing", "roguelike", "rpg")):
+        return "Rôle"
+    if any(k in words for k in ("simulation", "sandbox")):
+        return "Simulation"
+    return "Action"
+
+
+def score_icon_path(path: str, display_name: str) -> int:
+    """Prefer application branding over badges, UI controls and screenshots."""
+    lower = path.casefold()
+    filename = lower.rsplit("/", 1)[-1]
+    if not filename.endswith((".png", ".jpg", ".jpeg", ".ico", ".icns")):
+        return -1
+    if any(part in lower for part in (
+            "test/", "docs/screenshots", "screenshot", "badge", "shield",
+            "toolbar", "button", "spinner", "back.png", "loading",
+            "third_party/", "third-party/", "vendor/", "node_modules/",
+            ".github/", "licenses", "playstore", "appstore")):
+        return -1
+    canonical = re.sub(r"[^a-z0-9]", "", display_name.casefold())
+    stem = re.sub(r"[^a-z0-9]", "", filename.rsplit(".", 1)[0])
+    score = 0
+    if canonical and len(canonical) > 3 and canonical in stem:
+        score += 85
+    if "appicon" in stem or "applicationicon" in stem:
+        score += 95
+    elif "logo" in stem:
+        score += 55
+    elif "icon" in stem:
+        score += 45
+    else:
+        score += 5
+    if any(dim in stem for dim in ("1024", "512", "256")):
+        score += 32
+    if filename.endswith(".icns"):
+        score += 20
+    if lower.startswith(("data/", "assets/", "resources/", "res/")):
+        score += 14
+    if filename in ("icon.png", "logo.png") and path.count("/") > 2:
+        score -= 30
+    return score if score >= 55 else -1
+
+
+def discover_icon_url(item: dict) -> str | None:
+    """One bounded server-side Git tree lookup, never one API request per user."""
+    repo = item["repo"]
+    branch = item.get("default_branch") or "main"
+    hint = ICON_PATH_HINTS.get(repo.casefold())
+    if hint:
+        path = hint
+    else:
+        tree = api("/repos/" + repo + "/git/trees/" +
+                   urllib.parse.quote(branch, safe="") + "?recursive=1", attempts=1)
+        if not isinstance(tree, dict) or not isinstance(tree.get("tree"), list):
+            return None
+        images = ((score_icon_path(f.get("path", ""), item["name"]), f.get("path", ""))
+                  for f in tree["tree"] if f.get("type") == "blob")
+        rank, path = max(images, default=(-1, ""))
+        if rank < 55:
+            return None
+    return ("https://raw.githubusercontent.com/" + repo + "/" +
+            urllib.parse.quote(branch, safe="") + "/" +
+            urllib.parse.quote(path, safe="/"))
 
 
 
@@ -225,6 +343,8 @@ def normalize_repo(entry: dict, category: str, verified_at: str, tag: str,
         "verified_at": verified_at,
         "source": "GitHub release",
         "editorial_rank": FEATURED_REPOS.get(repo.casefold(),0),
+        "genre": game_genre(repo, classify(category, entry, is_seed),
+                            entry.get("description") or ""),
     }
 
 
@@ -421,7 +541,12 @@ def main() -> int:
                 print(f"Unexpected verification error ({key}): {err}", file=sys.stderr)
     results = {key: value for key, value in results.items()
                if recent(value, MAX_AGE_DAYS) and is_macos_asset(value.get("asset_name", ""))}
+    seed_categories = {key: seed["category"] for key, seed in seeds.items()}
     for entry in results.values():
+        category = seed_categories.get(entry["repo"].casefold())
+        if category:
+            entry["category"] = category
+        entry["genre"] = game_genre(entry["repo"], entry["category"], entry.get("summary") or "")
         entry["editorial_rank"] = FEATURED_REPOS.get(entry["repo"].casefold(),0)
         entry["audience"] = classify_audience(entry, entry.get("category", ""),
                                               entry.get("asset_name", ""))
@@ -435,7 +560,33 @@ def main() -> int:
         if old is None or (item.get("verified_at",""),item.get("stars",0)) > (
                 old.get("verified_at",""),old.get("stars",0)):
             canonical[key] = item
-    # Favor popular real apps while separating engines and launchers from games.
+    # Enrich icons in the scheduled index rather than firing hundreds of
+    # GitHub API requests from user Macs. Reuse known paths (including misses).
+    scans = 0
+    seeded_first = sorted(canonical.values(), key=lambda e:(
+        e["repo"].casefold() not in seeds, -int(e.get("editorial_rank") or 0)))
+    for item in seeded_first:
+        old = previous.get(item["repo"].casefold(), {})
+        item["icon_url"] = item.get("icon_url") or old.get("icon_url")
+        item["icon_checked_at"] = item.get("icon_checked_at") or old.get("icon_checked_at")
+        # Only curated and high-value projects consume the bounded scan budget.
+        if item["repo"].casefold() not in seeds and int(item.get("editorial_rank") or 0) < 90:
+            continue
+        stamp = item.get("icon_checked_at")
+        if stamp and is_recent_rejection(stamp, days=ICON_RECHECK_DAYS):
+            continue
+        if scans >= MAX_ICON_SCANS:
+            continue
+        scans += 1
+        try:
+            url = discover_icon_url(item)
+            if url:
+                item["icon_url"] = url
+            item["icon_checked_at"] = NOW.isoformat()
+        except Exception as err:
+            print(f"Icon scan skipped ({item['repo']}): {err}", file=sys.stderr)
+    print(f"Icon paths reused or inspected; new tree lookups <= {MAX_ICON_SCANS}")
+    # Favor curated consumer-friendly apps while separating engines from games.
     ordered_entries = sorted(canonical.values(),
                              key=lambda e:(-int(e.get("editorial_rank") or 0),
                                            -int(e.get("downloads") or 0),
