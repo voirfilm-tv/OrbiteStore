@@ -44,7 +44,7 @@ struct CatalogDetails: View {
                             .tracking(1.4).foregroundStyle(.white.opacity(0.67))
                         Text(entry.name).font(.system(size:37,weight:.bold,design:.rounded))
                             .foregroundStyle(.white).lineLimit(2)
-                        Text(repoInfo?.description ?? entry.repo)
+                        Text(store.catalogDescription(entry))
                             .font(.subheadline).foregroundStyle(.white.opacity(0.77))
                             .lineLimit(3)
                         HStack(spacing:7) {
@@ -88,11 +88,11 @@ struct CatalogDetails: View {
     }
     private var metrics:some View {
         HStack(spacing:11) {
-            metric("ÉTOILES GITHUB",value:repoInfo?.stargazers_count.formatted() ?? "—",
+            metric("ÉTOILES GITHUB",value:store.catalogStars(entry)>0 ? store.catalogStars(entry).formatted() : "—",
                    icon:"star.fill")
-            metric("LANGAGE",value:repoInfo?.language ?? "Non indiqué",icon:"curlybraces")
-            metric("LICENCE",value:repoInfo?.license?.spdx_id ?? "À vérifier",icon:"doc.text")
-            metric("DERNIÈRE RELEASE",value:release?.tag_name ?? "À vérifier",icon:"tag")
+            metric("LANGAGE",value:repoInfo?.language ?? store.catalogLanguage(entry) ?? "Non indiqué",icon:"curlybraces")
+            metric("LICENCE",value:repoInfo?.license?.spdx_id ?? store.catalogIndexedLicense(entry) ?? "À vérifier",icon:"doc.text")
+            metric("DERNIÈRE RELEASE",value:release?.tag_name ?? store.catalogReleaseTag(entry) ?? "À vérifier",icon:"tag")
         }
     }
 
@@ -182,7 +182,7 @@ struct CatalogDetails: View {
         }
     }
     private var alternatives:[CatalogApp] {
-        Array(Inventory.catalog.filter{$0.category==entry.category && $0.repo != entry.repo}.prefix(6))
+        Array(store.catalog.filter{$0.category==entry.category && $0.repo != entry.repo}.sorted{store.catalogStars($0)>store.catalogStars($1)}.prefix(6))
     }
     private var versions:some View {
         VStack(alignment:.leading,spacing:13) {
