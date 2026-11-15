@@ -27,6 +27,23 @@ enum OrbitCollections {
         .init(repo:"VSCodium/vscodium",name:"VSCodium",alternativeTo:"VS Code",subtitle:"Éditeur de code libre",symbol:"chevron.left.forwardslash.chevron.right",advanced:true,notice:"")
     ]
     static let hosted:[OrbitEditorial]=[
+        .init(repo:"nextcloud/server",name:"Nextcloud",alternativeTo:"Google Drive",subtitle:"Fichiers, photos et outils collaboratifs",symbol:"cloud.fill",advanced:false,notice:"Nécessite un serveur et des sauvegardes"),
+        .init(repo:"syncthing/syncthing",name:"Syncthing",alternativeTo:"Synchronisation cloud",subtitle:"Synchroniser des dossiers entre ordinateurs",symbol:"arrow.triangle.2.circlepath",advanced:false,notice:"Réplication locale ou par Internet, pas une sauvegarde"),
+        .init(repo:"photoprism/photoprism",name:"PhotoPrism",alternativeTo:"Google Photos",subtitle:"Gérer et explorer une photothèque personnelle",symbol:"photo.stack",advanced:false,notice:"Serveur et stockage nécessaires"),
+        .init(repo:"audiobookshelf/audiobookshelf",name:"Audiobookshelf",alternativeTo:"Applications de livres audio",subtitle:"Livres audio et podcasts personnels",symbol:"headphones",advanced:false,notice:"Fichiers audio non inclus"),
+        .init(repo:"stirlingtools/Stirling-PDF",name:"Stirling PDF",alternativeTo:"Adobe Acrobat (outils PDF)",subtitle:"Fusionner, découper et traiter les PDF",symbol:"doc.richtext",advanced:false,notice:"Service web auto-hébergé"),
+        .init(repo:"linkding/linkding",name:"Linkding",alternativeTo:"Pocket / favoris web",subtitle:"Enregistrer et retrouver ses liens",symbol:"bookmark.fill",advanced:false,notice:"Application web"),
+        .init(repo:"FreshRSS/FreshRSS",name:"FreshRSS",alternativeTo:"Feedly",subtitle:"Suivre ses sites et flux RSS",symbol:"dot.radiowaves.left.and.right",advanced:false,notice:"Service web"),
+        .init(repo:"memos/memos",name:"Memos",alternativeTo:"Notes en ligne",subtitle:"Notes rapides hébergées chez soi",symbol:"note.text",advanced:false,notice:"Service web"),
+        .init(repo:"readeck/readeck",name:"Readeck",alternativeTo:"Pocket",subtitle:"Sauvegarder des pages à lire plus tard",symbol:"text.book.closed",advanced:false,notice:"Service web"),
+        .init(repo:"gethomepage/homepage",name:"Homepage",alternativeTo:"Page d'accueil personnalisée",subtitle:"Tableau de bord pour ses services",symbol:"square.grid.2x2.fill",advanced:false,notice:"Accès interne et configuration nécessaires"),
+        .init(repo:"bastienwirtz/homer",name:"Homer",alternativeTo:"Page de démarrage",subtitle:"Portail élégant vers ses applications",symbol:"house",advanced:false,notice:"Application web"),
+        .init(repo:"filebrowser/filebrowser",name:"File Browser",alternativeTo:"Gestionnaire de fichiers web",subtitle:"Parcourir ses fichiers depuis le navigateur",symbol:"folder",advanced:false,notice:"Protéger les accès et les répertoires"),
+        .init(repo:"Kareadita/Kavita",name:"Kavita",alternativeTo:"Bibliothèques de BD",subtitle:"Lire des BD et ebooks depuis chez soi",symbol:"books.vertical",advanced:false,notice:"Service web ; fichiers non inclus"),
+        .init(repo:"calcom/cal.com",name:"Cal.com",alternativeTo:"Calendly",subtitle:"Réservations et prises de rendez-vous",symbol:"calendar",advanced:false,notice:"Déploiement plus avancé"),
+        .init(repo:"BookStackApp/BookStack",name:"BookStack",alternativeTo:"Confluence",subtitle:"Documenter projets et connaissances",symbol:"books.vertical",advanced:false,notice:"Service web"),
+        .init(repo:"kanboard/kanboard",name:"Kanboard",alternativeTo:"Trello",subtitle:"Tableaux de suivi de tâches",symbol:"rectangle.3.group",advanced:false,notice:"Application web"),
+        .init(repo:"open-webui/open-webui",name:"Open WebUI",alternativeTo:"ChatGPT (interface)",subtitle:"Interface IA pour modèles et services configurés",symbol:"bubble.left.and.text.bubble.right",advanced:false,notice:"Modèle IA ou API nécessaire"),
         .init(repo:"immich-app/immich",name:"Immich",alternativeTo:"Google Photos",subtitle:"Photos et souvenirs de famille",symbol:"photo.on.rectangle.angled",advanced:false,notice:"Serveur ou NAS nécessaire"),
         .init(repo:"jellyfin/jellyfin",name:"Jellyfin",alternativeTo:"Plex",subtitle:"Films et séries depuis son serveur",symbol:"play.rectangle",advanced:false,notice:"Serveur et client de lecture nécessaires"),
         .init(repo:"paperless-ngx/paperless-ngx",name:"Paperless-ngx",alternativeTo:"Gestion documentaire",subtitle:"Archiver ses factures et papiers",symbol:"doc.on.doc",advanced:false,notice:"Application web auto-hébergée"),
@@ -38,7 +55,18 @@ enum OrbitCollections {
         .init(repo:"coollabsio/coolify",name:"Coolify",alternativeTo:"Vercel",subtitle:"Déployer applications et bases de données",symbol:"server.rack",advanced:true,notice:"Administration serveur avancée"),
         .init(repo:"NginxProxyManager/nginx-proxy-manager",name:"Nginx Proxy Manager",alternativeTo:"Reverse proxy",subtitle:"Domaines et certificats TLS",symbol:"network",advanced:true,notice:"Administration réseau"),
         .init(repo:"portainer/portainer",name:"Portainer",alternativeTo:"Gestion Docker",subtitle:"Administration de conteneurs",symbol:"square.stack.3d.up",advanced:true,notice:"Pour développeurs et administrateurs"),
-        .init(repo:"searxng/searxng",name:"SearXNG",alternativeTo:"Recherche web",subtitle:"Métamoteur de recherche privé",symbol:"magnifyingglass",advanced:true,notice:"Résultats tributaires des sources externes")
+        .init(repo:"searxng/searxng",name:"SearXNG",alternativeTo:"Recherche web",subtitle:"Métamoteur de recherche privé",symbol:"magnifyingglass",advanced:true,notice:"Résultats tributaires des sources externes"),
+        .init(repo:"firefly-iii/firefly-iii",name:"Firefly III",alternativeTo:"Suivi financier",subtitle:"Analyser ses transactions et budgets",symbol:"chart.bar",advanced:true,notice:"Maintenance, confidentialité et sauvegardes"),
+        .init(repo:"Forgejo/forgejo",name:"Forgejo",alternativeTo:"GitHub",subtitle:"Dépôts Git et gestion de tickets",symbol:"chevron.left.forwardslash.chevron.right",advanced:true,notice:"Administration et sauvegardes nécessaires"),
+        .init(repo:"louislam/uptime-kuma",name:"Uptime Kuma",alternativeTo:"Pingdom",subtitle:"Surveiller la disponibilité de ses services",symbol:"waveform.path.ecg",advanced:true,notice:"Doit rester en fonctionnement"),
+        .init(repo:"AdguardTeam/AdGuardHome",name:"AdGuard Home",alternativeTo:"DNS filtrant",subtitle:"Filtrage DNS pour un réseau local",symbol:"shield.fill",advanced:true,notice:"Impact possible sur la connectivité"),
+        .init(repo:"pi-hole/pi-hole",name:"Pi-hole",alternativeTo:"Blocage publicitaire DNS",subtitle:"Réduire le pistage dans un réseau",symbol:"network.badge.shield.half.filled",advanced:true,notice:"Administration réseau"),
+        .init(repo:"NocoDB/NocoDB",name:"NocoDB",alternativeTo:"Airtable",subtitle:"Interface web pour ses bases de données",symbol:"tablecells",advanced:true,notice:"Gestion des droits et bases"),
+        .init(repo:"dgtlmoon/changedetection.io",name:"Changedetection.io",alternativeTo:"Surveillance de pages web",subtitle:"Être alerté lors de changements sur un site",symbol:"eye",advanced:true,notice:"Respecter les conditions des sites surveillés"),
+        .init(repo:"CorentinTh/it-tools",name:"IT-Tools",alternativeTo:"Boîte à outils web",subtitle:"Convertisseurs, encodage et outils locaux",symbol:"wrench.and.screwdriver",advanced:true,notice:"Outils pour utilisateurs avancés"),
+        .init(repo:"getumbrel/umbrel",name:"Umbrel",alternativeTo:"Serveur personnel",subtitle:"Découvrir des services à installer chez soi",symbol:"server.rack",advanced:true,notice:"Environnement dédié et sauvegardes"),
+        .init(repo:"Lissy93/dashy",name:"Dashy",alternativeTo:"Tableau de bord cloud",subtitle:"Portail personnalisable vers ses services",symbol:"square.grid.3x2.fill",advanced:true,notice:"Application web"),
+        .init(repo:"frigate-nvr/frigate",name:"Frigate",alternativeTo:"NVR cloud",subtitle:"Surveillance vidéo locale avec détection",symbol:"video",advanced:true,notice:"Matériel compatible et respect de la vie privée")
     ]
     static let featured=[
         "iina/iina","HandBrake/HandBrake","localsend/localsend",
