@@ -54,7 +54,7 @@ struct StoreWindow: View {
     @StateObject private var discovery = GitHubDiscovery()
     @State private var selectedEcosystem: Ecosystem?
     @State private var catalogPresence = "Toutes"
-    @State private var catalogSort = "Popularité"
+    @State private var catalogSort = "Recommandé"
     @State private var catalogMacFilter = "Paquets macOS"
     @State private var catalogPageSize = 60
     @State private var remoteFilter = "Tous"
@@ -93,7 +93,9 @@ struct StoreWindow: View {
         } else if catalogPresence == "Non installées" {
             items=items.filter { store.matches($0).isEmpty }
         }
-        if catalogSort == "Nom A–Z" {
+        if catalogSort == "Recommandé" {
+            items.sort { store.catalogDiscoveryScore($0) > store.catalogDiscoveryScore($1) }
+        } else if catalogSort == "Nom A–Z" {
             items.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         } else if catalogSort == "Popularité" {
             items.sort { store.catalogStars($0) > store.catalogStars($1) }
@@ -401,6 +403,7 @@ struct StoreWindow: View {
                     Text("Non installées").tag("Non installées")
                 }.pickerStyle(.menu).frame(width:160)
                 Picker("Trier",selection:$catalogSort) {
+                    Text("Pour vous").tag("Recommandé")
                     Text("★ Popularité").tag("Popularité")
                     Text("Activité récente").tag("Activité récente")
                     Text("Nom A–Z").tag("Nom A–Z")
