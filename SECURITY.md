@@ -1,6 +1,6 @@
 # Security / Sécurité
 
-**OrbitStore v0.3.0 is alpha software.** It discovers and downloads potentially untrusted GitHub files. It must not be treated as a trusted binary registry or a security-reviewed installer.
+**OrbitStore v0.3.1 is alpha software.** It discovers and downloads potentially untrusted GitHub files. It must not be treated as a trusted binary registry or a security-reviewed installer.
 
 ## Vulnerability reports / Signalement
 
@@ -27,3 +27,7 @@ When GitHub Private Vulnerability Reporting is enabled, use **Security → Repor
 0.3.x: alpha only; no promised security support response time. Earlier pre-releases may not receive patches.
 
 For a report, include affected version, reproduction steps and impact privately, never access tokens or personal data.
+
+## Public catalog security scope
+
+The scheduled catalog indexer only checks for suitably named Mac release assets, NOT executable safety, signing identity, notarization, dependency integrity, licensing or compatibility. The client must verify macOS protections when installing. Do not treat inclusion, GitHub stars, or a Mac asset filename as an endorsement. The catalog index is fetched over HTTPS and validated for basic JSON shape and repository names.
