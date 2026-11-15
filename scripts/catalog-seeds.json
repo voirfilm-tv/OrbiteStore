@@ -618,5 +618,105 @@
     "repo": "upscayl/upscayl",
     "name": "Upscayl",
     "category": "Graphisme"
+  },
+  {
+    "repo": "rxhanson/Rectangle",
+    "name": "Rectangle",
+    "category": "Utilitaires"
+  },
+  {
+    "repo": "p0deje/Maccy",
+    "name": "Maccy",
+    "category": "Productivité"
+  },
+  {
+    "repo": "alienator88/Pearcleaner",
+    "name": "Pearcleaner",
+    "category": "Utilitaires"
+  },
+  {
+    "repo": "jordanbaird/Ice",
+    "name": "Ice",
+    "category": "Personnalisation"
+  },
+  {
+    "repo": "MonitorControl/MonitorControl",
+    "name": "MonitorControl",
+    "category": "Accessibilité"
+  },
+  {
+    "repo": "transmission/transmission",
+    "name": "Transmission",
+    "category": "Réseau"
+  },
+  {
+    "repo": "iterate-ch/cyberduck",
+    "name": "Cyberduck",
+    "category": "Réseau"
+  },
+  {
+    "repo": "espanso/espanso",
+    "name": "Espanso",
+    "category": "Productivité"
+  },
+  {
+    "repo": "desktop/desktop",
+    "name": "GitHub Desktop",
+    "category": "Développement"
+  },
+  {
+    "repo": "usebruno/bruno",
+    "name": "Bruno",
+    "category": "Développement"
+  },
+  {
+    "repo": "bitwarden/clients",
+    "name": "Bitwarden",
+    "category": "Sécurité"
+  },
+  {
+    "repo": "signalapp/Signal-Desktop",
+    "name": "Signal",
+    "category": "Internet"
+  },
+  {
+    "repo": "RawTherapee/RawTherapee",
+    "name": "RawTherapee",
+    "category": "Graphisme"
+  },
+  {
+    "repo": "NatronGitHub/Natron",
+    "name": "Natron",
+    "category": "Création"
+  },
+  {
+    "repo": "GNOME/gimp",
+    "name": "GIMP",
+    "category": "Graphisme"
+  },
+  {
+    "repo": "OpenShot/openshot-qt",
+    "name": "OpenShot",
+    "category": "Création"
+  },
+  {
+    "repo": "KDE/kdenlive",
+    "name": "Kdenlive",
+    "category": "Création"
+  },
+  {
+    "repo": "mltframework/shotcut",
+    "name": "Shotcut",
+    "category": "Création"
+  },
+  {
+    "repo": "Stellarium/stellarium",
+    "name": "Stellarium",
+    "category": "Éducation"
+  },
+  {
+    "repo": "hoppscotch/hoppscotch",
+    "name": "Hoppscotch",
+    "category": "Développement"
   }
 ]
