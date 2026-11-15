@@ -16,7 +16,7 @@
 <!-- ORBITSTORE_SCREENSHOTS_START -->
 ## Screenshots / Captures d'écran
 
-Screenshots of the actual running macOS application. / Captures authentiques de l'application native.
+Screenshots captured from earlier running alpha versions (UI may differ from 0.3.1). / Captures authentiques d'anciennes versions alpha (l'interface peut différer de 0.3.1).
 
 ### Discover / Découvrir
 ![OrbitStore actual Discover screen](docs/screenshots/discover.png)
@@ -35,9 +35,9 @@ Screenshots of the actual running macOS application. / Captures authentiques de 
 
 ### About
 
-OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It brings together a curated GitHub software catalog, live repository search, installed-app discovery, extensions and GitHub releases. This is an **early alpha (v0.3.0)**, not yet a complete package manager.
+OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It brings together a curated GitHub software catalog, live repository search, installed-app discovery, extensions and GitHub releases. This is an **early alpha (v0.3.1)**, not yet a complete package manager.
 
-### Implemented in v0.3.0
+### Implemented in v0.3.1
 
 - Native catalog: Discover, Installed, Ecosystems, Updates and expanded categories, including **Games**.
 - Live GitHub repository search and GitHub star counts (**popularity, not user reviews or a security rating**).
@@ -47,6 +47,18 @@ OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It b
 - GitHub release checks for known apps and optional package **download**; SHA-256 is checked when GitHub supplies a digest.
 - Optional extension discovery notifications for newly detected applications.
 
+
+### New in 0.3.1 alpha — real catalog discovery
+
+- **Live, scalable catalog:** a scheduled GitHub Actions pipeline searches for Mac applications and verifies that upstream GitHub releases contain a macOS-specific DMG, PKG or ZIP asset. The compact JSON index is shared with clients, which cache it locally.
+- **First index: 146 macOS release projects (November 15, 2026)**, with source metadata and categories. The count grows and changes as daily indexing discovers more projects.
+- **Playable Games category**, separated from game engines, game-porting tools, emulators and launchers. Popular entries are ranked by GitHub stars; game metadata is classified more carefully.
+- **Better browsing:** 60 cards per page with incremental loading, macOS-asset availability filter, popularity/activity sorting and explicit catalog refresh.
+- **Live GitHub search pagination:** 50 results per page plus a Load More button, without mixing raw code repositories into the vetted macOS index.
+- **Much lower client API usage:** a small downloaded index replaces dozens of direct API lookups at every app launch.
+- [How the catalog works](docs/CATALOG.md) — transparent limits, attribution, performance and safety.
+
+**Release detection is not a security audit.** Even a repository with a named Mac binary may fail signature validation, Gatekeeper, or architectural compatibility. Commercial Steam/Epic/GOG titles without GitHub releases require separate integrations.
 
 ### New in 0.3.0 alpha — lifecycle management
 
@@ -87,13 +99,13 @@ OrbitStore now includes a **first safety-gated installer** and a redesigned nati
 - **Not yet a universal installer/updater:** automatic installation covers only a narrow, Gatekeeper-accepted .app subset, and only when the destination is writable. PKG and unverified binaries require manual steps.
 - The DMG distributed here uses **ad-hoc signing, not Apple notarization**, so Gatekeeper may prompt users. Do not disable system protections globally.
 - Installation/rollback and extension adapters are alpha features; no end-to-end compatibility certification exists across all macOS versions and CPU architectures.
-- GitHub rate limits and source-only repositories can prevent discovery or installation.
+- The indexer detects GitHub release assets, not all macOS software distributed through vendor stores or Homebrew. GitHub rate limits and source-only repositories can prevent discovery or installation.
 - Community plugins can execute arbitrary code in their host app. Obsidian's official registry inclusion does **not** imply security auditing.
 - The local history and backup files may consume space; updates never guarantee rollback of application-created user data.
 
 ### Download and build
 
-[Download the experimental v0.3.0 DMG](https://github.com/voirfilm-tv/OrbiteStore/releases/tag/v0.3.0)
+[Download the experimental v0.3.1 DMG](https://github.com/voirfilm-tv/OrbiteStore/releases/tag/v0.3.1)
 
 Build from source on macOS 13+ with the free Xcode Command Line Tools:
 
@@ -104,7 +116,7 @@ swift build -c release
 bash scripts/build-dmg.sh
 ~~~
 
-Output: dist/OrbitStore-0.3.0-unsigned.dmg. Do **not** disable Gatekeeper globally.
+Output: dist/OrbitStore-0.3.1-unsigned.dmg. Do **not** disable Gatekeeper globally.
 
 ### Contribute
 
@@ -122,7 +134,7 @@ Start with the [contributing guide](CONTRIBUTING.md), [open tasks](https://githu
 
 OrbitStore est une **application native SwiftUI pour macOS 13+**, développée en open source. Elle permet de découvrir des projets GitHub, consulter des dépôts en direct, retrouver les logiciels installés sur le Mac et explorer leurs extensions.
 
-**Version actuelle : alpha 0.3.0.** Il ne s'agit pas encore d'un gestionnaire d'installation universel.
+**Version actuelle : alpha 0.3.1.** Il ne s'agit pas encore d'un gestionnaire d'installation universel.
 
 **Déjà disponible :** catalogue et catégories dont **Jeux**, recherche GitHub réelle, nombre d'étoiles GitHub (popularité uniquement), inventaire des applications installées y compris propriétaires, consultation interne de catalogues d'extensions, icônes authentiques quand elles sont disponibles, vérification de releases et téléchargement de certains paquets.
 
