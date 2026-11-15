@@ -67,7 +67,7 @@ enum MarketplaceHTTP {
             URLQueryItem(name: "per_page", value: "40")
         ]
         guard let url = parts.url else { throw MarketplaceNetworkError.malformed }
-        let hits = try JSONDecoder().decode(SearchPayload.self, from: fetch(url)).items
+        let hits = try JSONDecoder().decode(SearchPayload.self, from: try await fetch(url)).items
         return hits.map {
             PluginRecord(id: $0.full_name, name: $0.name, summary: $0.description ?? "Dépôt GitHub communautaire",
                          url: $0.html_url, compatibility: "Non vérifiée", source: "Projet GitHub associé",
@@ -142,7 +142,7 @@ enum PluginDirectory {
                 let owner: String?
                 let versions: [Version]?
             }
-            let items = try JSONDecoder().decode([Item].self, from: MarketplaceHTTP.fetch(url))
+            let items = try JSONDecoder().decode([Item].self, from: try await MarketplaceHTTP.fetch(url))
             return items.map {
                 let abi = $0.versions?.compactMap(\.targetAbi).first
                 let compatibility = abi.map { "API serveur Jellyfin \($0)" } ?? "Version serveur à confirmer"
@@ -346,7 +346,7 @@ struct ExtensionBrowser: View {
         loading = true
         error = nil
         do { records = try await PluginDirectory.load(ecosystem) }
-        catch { error = "Catalogue inaccessible : \(error.localizedDescription)" }
+        catch { self.error = "Catalogue inaccessible : \(error.localizedDescription)" }
         loading = false
     }
 }
