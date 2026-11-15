@@ -305,7 +305,12 @@ final class StoreModel: ObservableObject {
     func downloadedFile(for entry:CatalogApp) -> URL? {
         let saved=downloaded[entry.repo] ?? UserDefaults.standard.string(forKey:"download.\(entry.repo)")
         guard let path=saved, FileManager.default.fileExists(atPath:path) else { return nil }
-        return URL(fileURLWithPath:path)
+        let file=URL(fileURLWithPath:path)
+        // Do not present last month's DMG as the current release.
+        if let release=releases[entry.repo],
+           let latest=suitableMacAsset(for:release),
+           file.lastPathComponent != latest.name { return nil }
+        return file
     }
 
     func revealDownloaded(_ entry:CatalogApp) {
