@@ -68,7 +68,7 @@ SEARCHES = [
 ]
 REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 EXCLUDED = ("windows", "win32", "linux", "android", "freebsd", "openbsd", "netbsd",
-            "source", "src-", "symbols", ".dsym", "debug", "terminal-only",
+            "source", "src-", "symbols", "dsym", "debug", "terminal-only",
             "console-only", "headless", "cli-only", "dont-use", "do-not-use", "checksum", ".sha", ".asc",
             ".sig", "portable.exe", "setup.exe")
 LAUNCHER_HINTS = ("emulator", "launcher", "rom-manager", "game-launcher")
