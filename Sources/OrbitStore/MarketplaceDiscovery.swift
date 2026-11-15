@@ -210,8 +210,8 @@ enum PluginDirectory {
     }
 }
 
-// Authentic icons: installed .app icons first, then imagery referenced by the
-// project's README. We never replace unknown branding with a made-up app icon.
+// Authentic icons: installed .app first, then a publisher asset discovered
+// by the scheduled indexer, then README/site fallbacks. No invented branding.
 actor RepositoryLogoService {
     static let shared = RepositoryLogoService()
     private var cache: [String: Data] = [:]
@@ -240,7 +240,7 @@ actor RepositoryLogoService {
         try? bytes.write(to:filename(repo),options:.atomic)
     }
 
-    func imageData(repo:String,branch:String?,homepage:String?) async -> Data? {
+    func imageData(repo:String,branch:String?,homepage:String?,iconURL:String? = nil) async -> Data? {
         if let cached=cache[repo] { return cached }
         if let persisted=loadDisk(repo) {
             cache[repo]=persisted
@@ -248,7 +248,7 @@ actor RepositoryLogoService {
         }
         if let pending=inFlight[repo] { return await pending.value }
         let task=Task<Data?,Never> {
-            await self.fetchLimited(repo:repo,branch:branch,homepage:homepage)
+            await self.fetchLimited(repo:repo,branch:branch,homepage:homepage,iconURL:iconURL)
         }
         inFlight[repo]=task
         let result=await task.value
@@ -256,7 +256,7 @@ actor RepositoryLogoService {
         return result
     }
 
-    private func fetchLimited(repo:String,branch:String?,homepage:String?) async -> Data? {
+    private func fetchLimited(repo:String,branch:String?,homepage:String?,iconURL:String?) async -> Data? {
         while activeRequests >= maxActiveRequests {
             try? await Task.sleep(nanoseconds:150_000_000)
             if Task.isCancelled { return nil }
@@ -265,6 +265,17 @@ actor RepositoryLogoService {
         defer { activeRequests -= 1 }
         let key=repo+"|"+(homepage ?? "")
         guard !unavailable.contains(key),repo.split(separator:"/").count==2 else {return nil}
+        // An explicitly indexed app icon is preferred. The URL is constrained
+        // to the canonical repository on GitHub's raw content host.
+        if let iconURL, let url=URL(string:iconURL),
+           url.scheme=="https",url.host=="raw.githubusercontent.com",
+           url.path.lowercased().hasPrefix("/"+repo.lowercased()+"/"),
+           let bytes=try? await MarketplaceHTTP.fetch(url,accept:"image/*"),
+           bytes.count<2_500_000,NSImage(data:bytes) != nil {
+            cache[repo]=bytes
+            saveDisk(bytes,repo:repo)
+            return bytes
+        }
         // A persistent failure TTL protects against re-downloading a missing
         // logo on every launch, without caching failures indefinitely.
         let retryKey="orbit.icon.miss."+repo.lowercased()
@@ -349,11 +360,12 @@ struct AuthenticAppIcon: View {
     var installedPath: String? = nil
     var branch: String? = nil
     var homepage: String? = nil
+    var iconURL: String? = nil
     var size: CGFloat = 60
     @State private var remote: NSImage?
 
     private var lookupKey: String {
-        [repo, branch ?? "", homepage ?? ""].joined(separator: "|")
+        [repo, branch ?? "", homepage ?? "", iconURL ?? ""].joined(separator: "|")
     }
 
     @ViewBuilder
@@ -383,7 +395,7 @@ struct AuthenticAppIcon: View {
             .task(id: lookupKey) {
                 guard installedPath == nil else { return }
                 let data = await RepositoryLogoService.shared.imageData(
-                    repo: repo, branch: branch, homepage: homepage
+                    repo: repo, branch: branch, homepage: homepage, iconURL: iconURL
                 )
                 if let data { remote = NSImage(data: data) }
             }
