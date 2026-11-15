@@ -67,6 +67,7 @@ struct OrbitQueuePage: View {
     @EnvironmentObject private var operations:OrbitOperations
     @EnvironmentObject private var store:StoreModel
     @State private var selectedApps:Set<String>=[]
+    @State private var appSearch = ""
     private var bundles:[(String,String,[String])] {
         [
             ("Création & vidéo","Montage, capture et graphisme",["obsproject/obs-studio","HandBrake/HandBrake","iina/iina","blender/blender"]),
@@ -122,7 +123,7 @@ struct OrbitQueuePage: View {
                         Text(pack.1).font(.caption).foregroundStyle(.secondary)
                         Text("\(pack.2.count) applications").font(.caption2).foregroundStyle(.secondary)
                         Button("Ajouter à la file") {
-                            operations.enqueue(Inventory.catalog.filter{pack.2.contains($0.repo)},store:store)
+                            operations.enqueue(store.catalog.filter{pack.2.contains($0.repo)},store:store)
                         }.buttonStyle(.borderedProminent)
                     }
                     .frame(maxWidth:.infinity,alignment:.leading)
@@ -132,8 +133,13 @@ struct OrbitQueuePage: View {
             }
             Divider()
             Text("Sélection personnalisée").font(.title2.bold())
+            TextField("Rechercher parmi les logiciels indexés…",text:$appSearch)
+                .textFieldStyle(.roundedBorder)
             LazyVGrid(columns:[GridItem(.adaptive(minimum:180),spacing:8)],spacing:8) {
-                ForEach(Inventory.catalog.prefix(30)) { entry in
+                ForEach(Array(store.catalog.filter{
+                    appSearch.isEmpty || $0.name.localizedCaseInsensitiveContains(appSearch) ||
+                        $0.repo.localizedCaseInsensitiveContains(appSearch)
+                }.prefix(80))) { entry in
                     Toggle(entry.name,isOn:Binding(
                         get:{selectedApps.contains(entry.repo)},
                         set:{enabled in if enabled {selectedApps.insert(entry.repo)} else {selectedApps.remove(entry.repo)} }
@@ -144,7 +150,7 @@ struct OrbitQueuePage: View {
                 Text("\(selectedApps.count) sélectionnées").foregroundStyle(.secondary)
                 Spacer()
                 Button("Installer la sélection") {
-                    operations.enqueue(Inventory.catalog.filter{selectedApps.contains($0.repo)},store:store)
+                    operations.enqueue(store.catalog.filter{selectedApps.contains($0.repo)},store:store)
                     selectedApps=[]
                 }
                 .buttonStyle(.borderedProminent)
