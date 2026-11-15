@@ -54,7 +54,7 @@ struct OrbitEditorialPage:View {
     let kind:Kind
     @EnvironmentObject private var store:StoreModel
     @EnvironmentObject private var operations:OrbitOperations
-    @State private var query=""
+    @Binding var query:String
     @State private var selected:CatalogApp?
     private var title:String {kind == .alternatives ? "Alternatives" : "Auto-hébergé"}
     private var entries:[OrbitEditorial] {
