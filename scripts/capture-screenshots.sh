@@ -7,13 +7,22 @@ mkdir -p docs/screenshots
 capture() {
   local filename="$1" section="$2" query="$3"
   echo "Launching actual SwiftUI app, page: $section"
-  "$APP" "--screenshot-section=$section" "--screenshot-search=$query" "${4:-}" >/tmp/orbitstore-capture.log 2>&1 &
-  local pid=$!
-  sleep 9
-  local windowID
-  if ! windowID=$(swift scripts/window-id.swift); then
+  # Launch via LaunchServices: GUI windows are more reliable on hosted Macs.
+  local bundle="$PWD/dist/staging/OrbitStore.app"
+  if ! open -na "$bundle" --args "--screenshot-section=$section" "--screenshot-search=$query" "${4:-}" >/tmp/orbitstore-capture.log 2>&1; then
+    echo "LaunchServices failed; falling back to direct launch"
+    "$APP" "--screenshot-section=$section" "--screenshot-search=$query" "${4:-}" >>/tmp/orbitstore-capture.log 2>&1 &
+  fi
+  local windowID=""
+  for attempt in $(seq 1 18); do
+    sleep 2
+    if windowID=$(swift scripts/window-id.swift 2>/dev/null); then break; fi
+  done
+  if [ -z "$windowID" ]; then
+    echo "No real UI window was exposed by the hosted macOS session."
     cat /tmp/orbitstore-capture.log || true
-    kill "$pid" 2>/dev/null || true
+    pgrep -fl OrbitStore || true
+    pkill -x OrbitStore || true
     return 1
   fi
   sleep 3
