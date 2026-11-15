@@ -1,13 +1,9 @@
-name: Build and publish private macOS DMG
+name: Build and publish macOS DMG
 on:
-  push:
-    branches: [main]
-    paths:
-      - "Sources/**"
-      - "Package.swift"
-      - "scripts/**"
-      - ".github/workflows/build-dmg.yml"
   workflow_dispatch:
+  push:
+    tags:
+      - "v*"
 permissions:
   contents: write
 jobs:
@@ -16,25 +12,29 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Validate release tag and app version
+        run: |
+          VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' scripts/Info.plist)
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "v$VERSION" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match app version v$VERSION"; exit 1
+          fi
       - name: Build macOS application
         run: bash scripts/build-dmg.sh
-      - name: Verify package
+      - name: Verify DMG and ad-hoc app signature
         run: |
-          test -s dist/OrbitStore-0.2.0-unsigned.dmg
+          VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' scripts/Info.plist)
+          test -s "dist/OrbitStore-$VERSION-unsigned.dmg"
           codesign --verify -v dist/staging/OrbitStore.app
-          hdiutil verify dist/OrbitStore-0.2.0-unsigned.dmg
-      - name: Publish private GitHub release
+          hdiutil verify "dist/OrbitStore-$VERSION-unsigned.dmg"
+      - name: Publish pre-release without overwriting
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG=v0.2.0
+          VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' scripts/Info.plist)
+          TAG="v$VERSION"
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/OrbitStore-0.2.0-unsigned.dmg dist/SHA256SUMS.txt --clobber
-          else
-            gh release create "$TAG" dist/OrbitStore-0.2.0-unsigned.dmg dist/SHA256SUMS.txt \
-              --target "$GITHUB_SHA" \
-              --title "OrbitStore 0.2.0 - macOS" \
-              --notes "Version privée 0.2 : recherche GitHub intégrée, extensions consultables dans OrbitStore, catégories Jeux/Audio/Graphisme, icônes authentiques lorsque disponibles. Signature ad hoc, non notarisée par Apple." \
-              --prerelease
+            echo "Release $TAG already exists; refusing to overwrite."; exit 1
           fi
-          gh release view "$TAG" --json url,assets
+          gh release create "$TAG" "dist/OrbitStore-$VERSION-unsigned.dmg" dist/SHA256SUMS.txt \
+            --target "$GITHUB_SHA" --title "OrbitStore $VERSION — macOS alpha" \
+            --notes "Community alpha. Ad-hoc signed, not Apple-notarized. Check README and SECURITY.md." --prerelease

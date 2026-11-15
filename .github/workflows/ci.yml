@@ -1,0 +1,32 @@
+name: OrbitStore CI
+on:
+  pull_request:
+    paths:
+      - "Sources/**"
+      - "Package.swift"
+      - "scripts/**"
+      - ".github/workflows/ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Sources/**"
+      - "Package.swift"
+      - "scripts/**"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    name: build
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Swift version
+        run: swift --version
+      - name: Compile native macOS app
+        run: swift build -c debug --product OrbitStore
+      - name: Unit tests if available
+        run: |
+          if [ -d Tests ]; then swift test; else echo "No unit-test target yet."; fi
