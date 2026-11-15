@@ -328,7 +328,7 @@ final class OrbitOperations: ObservableObject {
     }
     func offerManagedUpdates(store:StoreModel) {
         guard autoInstallManaged else { return }
-        let eligible=Inventory.catalog.filter { entry in
+        let eligible=store.catalog.filter { entry in
             guard let receipt=receipts[entry.repo],
                   let app=store.matches(entry).first(where: { $0.bundleID==receipt.bundleID }),
                   app.path==receipt.path,
@@ -366,7 +366,7 @@ final class OrbitOperations: ObservableObject {
     }
     private func processQueue(store:StoreModel) async {
         while let job=jobs.first(where:{!$0.finished}) {
-            guard let entry=Inventory.catalog.first(where:{$0.repo==job.repo}) ??
+            guard let entry=store.catalog.first(where:{$0.repo==job.repo}) ??
                     CatalogApp.fromRepositoryName(job.repo,name:job.name) else { break }
             updateJob(job.id,phase:"Téléchargement",detail:"Recherche d'un paquet macOS officiel…")
             guard let package=await store.acquirePackage(entry) else {
@@ -562,7 +562,7 @@ final class OrbitOperations: ObservableObject {
 
     func notifyDigest(store:StoreModel) {
         guard digestEnabled else { return }
-        let current=Inventory.catalog.filter{!store.matches($0).isEmpty}
+        let current=store.catalog.filter{!store.matches($0).isEmpty}
         let available=current.filter{store.updateAvailable($0) && !isIgnored($0,release:store.releases[$0.repo]?.tag_name)}
         guard !available.isEmpty else { return }
         let today=Calendar.current.startOfDay(for:Date()).timeIntervalSince1970
