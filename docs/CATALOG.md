@@ -34,3 +34,13 @@ Run local Python policy tests with:
     python3 -m unittest discover -s tests -p test_catalog_index.py -v
 
 Run the indexer only when you intend to build a new index, ideally with a GitHub token passed in an environment variable. Never commit API credentials. 
+
+## Consumer and Developer modes (v0.4.0)
+
+Consumer mode is the default. It lists only consumer-classified projects with Mac release assets, checking Intel and Apple Silicon filename markers. It searches indexed applications locally, not unrelated source repositories.
+
+Developer Mode is an opt-in setting that reveals programming tools, source-only curated repositories, technical categories and unrestricted GitHub search. It never relaxes macOS security checks.
+
+The indexer rejects packages labeled FreeBSD, source/debug artifacts, and terminal-only builds, and retains multiple Mac asset names when available. This is still metadata screening rather than a full unpack-and-inspect certification. A DMG/PKG/ZIP filename is not proof of executable safety or macOS compatibility.
+
+The November 15, 2026 feed included 247 projects with Mac release assets (165 consumer-labeled and 82 developer-labeled), prior to per-Mac architecture filtering.

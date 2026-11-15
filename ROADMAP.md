@@ -2,8 +2,13 @@
 
 OrbitStore is in **alpha**. Only checked items below are implemented.
 
-## Available in v0.3.1 / Livré
+## Available in v0.4.0 / Livré
 - [x] Native SwiftUI storefront and macOS categories, including **Games / Jeux**
+- [x] Consumer-first catalog by default: known Mac release assets only
+- [x] Optional Developer Mode with technical repositories and full GitHub search
+- [x] CPU architecture filtering based on all indexed release asset names
+- [x] OrbitStore GitHub self-update checks with SHA-256 verified DMG and Finder handoff
+- [x] Exclude non-Mac PKG, debug symbol, terminal-only packages in indexer
 - [x] Daily GitHub Actions Mac release index, local cache and indexed category discovery
 - [x] Games separated from emulators and launchers, with ranked results
 - [x] GitHub raw-search pagination and progressive 60-card category browsing
@@ -61,3 +66,10 @@ OrbitStore is in **alpha**. Only checked items below are implemented.
 - [ ] Reproducible releases and migration from manual download to updates
 
 **Help wanted:** see [GitHub Issues](https://github.com/voirfilm-tv/OrbiteStore/issues). / Contributions bienvenues sur les Issues.
+
+## Upcoming work
+
+- [ ] Verify actual release archive contents remotely, beyond filename heuristics
+- [ ] Editorial curation of consumer software quality and categorization
+- [ ] Wider sources outside GitHub while preserving trusted download provenance
+- [ ] Fully hands-free signed self-updates if security and Apple distribution requirements can be met

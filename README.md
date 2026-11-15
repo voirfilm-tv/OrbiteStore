@@ -16,7 +16,7 @@
 <!-- ORBITSTORE_SCREENSHOTS_START -->
 ## Screenshots / Captures d'écran
 
-Screenshots captured from earlier running alpha versions (UI may differ from 0.3.1). / Captures authentiques d'anciennes versions alpha (l'interface peut différer de 0.3.1).
+Screenshots captured from earlier running alpha versions (UI may differ from 0.4.0). / Captures authentiques d'anciennes versions alpha (l'interface peut différer de 0.4.0).
 
 ### Discover / Découvrir
 ![OrbitStore actual Discover screen](docs/screenshots/discover.png)
@@ -35,9 +35,9 @@ Screenshots captured from earlier running alpha versions (UI may differ from 0.3
 
 ### About
 
-OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It brings together a curated GitHub software catalog, live repository search, installed-app discovery, extensions and GitHub releases. This is an **early alpha (v0.3.1)**, not yet a complete package manager.
+OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It brings together a curated GitHub software catalog, live repository search, installed-app discovery, extensions and GitHub releases. This is an **early alpha (v0.4.0)**, not yet a complete package manager.
 
-### Implemented in v0.3.1
+### Implemented in v0.4.0
 
 - Native catalog: Discover, Installed, Ecosystems, Updates and expanded categories, including **Games**.
 - Live GitHub repository search and GitHub star counts (**popularity, not user reviews or a security rating**).
@@ -47,6 +47,20 @@ OrbitStore is an experimental **native SwiftUI application** for macOS 13+. It b
 - GitHub release checks for known apps and optional package **download**; SHA-256 is checked when GitHub supplies a digest.
 - Optional extension discovery notifications for newly detected applications.
 
+
+### New in 0.4.0 alpha — App Store experience and OrbitStore updates
+
+**Public by default.** The storefront contains only consumer-oriented software found in GitHub releases with recognized macOS DMG, PKG or Mac-specific ZIP assets. Technical repositories and source-only projects are hidden, and asset architecture labels are checked against Apple Silicon / Intel.
+
+**Optional Developer Mode.** Enable it in Preferences → Expérience OrbitStore → Mode développeur to reveal development tools, source-only projects, technical categories and full GitHub repository search. Developer Mode never bypasses Gatekeeper.
+
+**OrbitStore self-updates.** Go to Mises à jour or Preferences to check GitHub Releases. The app verifies the SHA-256 digest of a downloaded OrbitStore DMG, then opens it in Finder. As the release is ad-hoc signed but not Apple-notarized, the user must quit OrbitStore and replace the old app manually. It cannot silently self-replace without bypassing macOS protections.
+
+**Stricter catalog indexing.** Other-platform PKG files, debug symbols and terminal-only release artifacts are excluded; consumer/developer audiences are distinguished; multiple macOS asset names per release help choose the right CPU architecture.
+
+The November 15, 2026 generated feed contained 247 macOS release projects: 165 tagged consumer and 82 developer, before the user's Mac architecture filter. Index counts change on future runs.
+
+**Security caveat:** recognizing the filename of a release asset does not prove its contents or software safety. Package inspection and Gatekeeper checks remain essential.
 
 ### New in 0.3.1 alpha — real catalog discovery
 
@@ -96,6 +110,11 @@ OrbitStore now includes a **first safety-gated installer** and a redesigned nati
 
 ### Current limitations
 
+- Consumer mode uses GitHub release asset filenames, not a full remote binary inspection. An archive could be mislabeled; the installer still inspects it.
+- Consumer/developer classification is heuristic and may require community corrections.
+- OrbitStore's own non-notarized DMG can be checked and downloaded within OrbitStore, but replacing the running application is manual.
+
+
 - **Not yet a universal installer/updater:** automatic installation covers only a narrow, Gatekeeper-accepted .app subset, and only when the destination is writable. PKG and unverified binaries require manual steps.
 - The DMG distributed here uses **ad-hoc signing, not Apple notarization**, so Gatekeeper may prompt users. Do not disable system protections globally.
 - Installation/rollback and extension adapters are alpha features; no end-to-end compatibility certification exists across all macOS versions and CPU architectures.
@@ -105,7 +124,7 @@ OrbitStore now includes a **first safety-gated installer** and a redesigned nati
 
 ### Download and build
 
-[Download the experimental v0.3.1 DMG](https://github.com/voirfilm-tv/OrbiteStore/releases/tag/v0.3.1)
+[Download the experimental v0.3.1 DMG](https://github.com/voirfilm-tv/OrbiteStore/releases/tag/v0.4.0)
 
 Build from source on macOS 13+ with the free Xcode Command Line Tools:
 
@@ -116,7 +135,7 @@ swift build -c release
 bash scripts/build-dmg.sh
 ~~~
 
-Output: dist/OrbitStore-0.3.1-unsigned.dmg. Do **not** disable Gatekeeper globally.
+Output: dist/OrbitStore-0.4.0-unsigned.dmg. Do **not** disable Gatekeeper globally.
 
 ### Contribute
 
@@ -134,9 +153,9 @@ Start with the [contributing guide](CONTRIBUTING.md), [open tasks](https://githu
 
 OrbitStore est une **application native SwiftUI pour macOS 13+**, développée en open source. Elle permet de découvrir des projets GitHub, consulter des dépôts en direct, retrouver les logiciels installés sur le Mac et explorer leurs extensions.
 
-**Version actuelle : alpha 0.3.1.** Il ne s'agit pas encore d'un gestionnaire d'installation universel.
+**Version actuelle : alpha 0.4.0.** Il ne s'agit pas encore d'un gestionnaire d'installation universel.
 
-**Déjà disponible :** catalogue et catégories dont **Jeux**, recherche GitHub réelle, nombre d'étoiles GitHub (popularité uniquement), inventaire des applications installées y compris propriétaires, consultation interne de catalogues d'extensions, icônes authentiques quand elles sont disponibles, vérification de releases et téléchargement de certains paquets.
+**Déjà disponible :** catalogue grand public par défaut, mode développeur facultatif, mise à jour d'OrbitStore avec contrôle SHA-256, catégories dont **Jeux**, recherche GitHub réelle, nombre d'étoiles GitHub (popularité uniquement), inventaire des applications installées y compris propriétaires, consultation interne de catalogues d'extensions, icônes authentiques quand elles sont disponibles, vérification de releases et téléchargement de certains paquets.
 
 **Limites :** les PKG, applications non signées ou refusées par Gatekeeper et dossiers exigeant des privilèges restent manuels. La gestion des plugins hors Obsidian est principalement exploratoire ; la compatibilité exacte doit être vérifiée. Les mises à jour automatiques ne concernent que des applications précédemment gérées avec identité de signature enregistrée. Les DMG d'OrbitStore ne sont pas notarisés par Apple.
 
