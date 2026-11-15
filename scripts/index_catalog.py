@@ -287,8 +287,17 @@ def main() -> int:
                 print(f"Unexpected verification error ({key}): {err}", file=sys.stderr)
     results = {key: value for key, value in results.items()
                if recent(value, MAX_AGE_DAYS) and is_macos_asset(value.get("asset_name", ""))}
-    # Favor actual games in the game section; categorize emulators/engines separately.
-    ordered_entries = sorted(results.values(),
+    # GitHub may redirect legacy seed names to a canonical owner/repository.
+    # Deduplicate by the *returned canonical repository*, not the input key.
+    canonical = {}
+    for item in results.values():
+        key = item["repo"].casefold()
+        old = canonical.get(key)
+        if old is None or (item.get("verified_at",""),item.get("stars",0)) > (
+                old.get("verified_at",""),old.get("stars",0)):
+            canonical[key] = item
+    # Favor popular real apps while separating engines and launchers from games.
+    ordered_entries = sorted(canonical.values(),
                              key=lambda e: (-int(e.get("stars") or 0), e["repo"].casefold()))[:MAX_ENTRIES]
     if len(ordered_entries) < 5:
         raise RuntimeError("Insufficient verified macOS entries; keeping existing index.")
