@@ -71,6 +71,7 @@ struct RepositoryInfo: Codable {
     let description: String?
     let html_url: String
     let default_branch: String?
+    let homepage: String?
     let archived: Bool?
 }
 
