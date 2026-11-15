@@ -1,4 +1,4 @@
-name: Build private macOS DMG
+name: Build and publish private macOS DMG
 on:
   push:
     branches: [main]
@@ -9,7 +9,7 @@ on:
       - ".github/workflows/build-dmg.yml"
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   macos:
     runs-on: macos-15
@@ -23,11 +23,18 @@ jobs:
           test -s dist/OrbitStore-0.1.0-unsigned.dmg
           codesign --verify -v dist/staging/OrbitStore.app
           hdiutil verify dist/OrbitStore-0.1.0-unsigned.dmg
-      - uses: actions/upload-artifact@v4
-        with:
-          name: OrbitStore-0.1.0-DMG
-          path: |
-            dist/OrbitStore-0.1.0-unsigned.dmg
-            dist/SHA256SUMS.txt
-          retention-days: 7
-          if-no-files-found: error
+      - name: Publish private GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=v0.1.0
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/OrbitStore-0.1.0-unsigned.dmg dist/SHA256SUMS.txt --clobber
+          else
+            gh release create "$TAG" dist/OrbitStore-0.1.0-unsigned.dmg dist/SHA256SUMS.txt \
+              --target "$GITHUB_SHA" \
+              --title "OrbitStore 0.1.0 - macOS" \
+              --notes "Version de prévisualisation privée macOS 13+. Signature ad hoc, NON notarisée par Apple. Installation sous responsabilité de l’utilisateur." \
+              --prerelease
+          fi
+          gh release view "$TAG" --json url,assets
