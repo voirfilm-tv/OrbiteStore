@@ -17,6 +17,14 @@ private struct OrbitReplacement: Identifiable {
 
 private enum OrbitReplacementLibrary {
     static let all:[OrbitReplacement] = [
+        .init(name:"Affinity",category:"Graphisme",replaces:"Photoshop et Illustrator",
+              summary:"Photo, illustration vectorielle et mise en page réunies dans une application",
+              url:"https://www.affinity.studio/download",repository:nil,
+              kind:"Éditeur",symbol:"paintpalette.fill"),
+        .init(name:"Affinity",category:"Création",replaces:"Adobe Creative Cloud",
+              summary:"Photo, vectoriel et mise en page gratuits, outils IA Canva optionnels",
+              url:"https://www.affinity.studio/download",repository:nil,
+              kind:"Éditeur",symbol:"paintbrush.pointed.fill"),
         .init(name:"GIMP",category:"Graphisme",replaces:"Adobe Photoshop",
               summary:"Retouche et composition de photos",url:"https://www.gimp.org/",
               repository:"GNOME/gimp",kind:"Éditeur",symbol:"paintbrush.pointed.fill"),
@@ -410,7 +418,7 @@ struct OrbitAlternativesPage:View {
 
     private var entries:[OrbitReplacement] {
         let value=query.trimmingCharacters(in:.whitespacesAndNewlines)
-        return OrbitReplacementLibrary.all.filter { item in
+        let matching=OrbitReplacementLibrary.all.filter { item in
             (category=="Toutes" || item.category==category) &&
             (availability=="Toutes" ||
                 (availability=="OrbitStore" && package(item) != nil) ||
@@ -418,6 +426,26 @@ struct OrbitAlternativesPage:View {
             (value.isEmpty || [item.name,item.replaces,item.summary,item.category]
                 .contains(where:{$0.localizedCaseInsensitiveContains(value)}))
         }
+        guard category=="Toutes",availability=="Toutes",value.isEmpty else {
+            return matching
+        }
+        // Round-robin discovery makes the first page useful across all types:
+        // not thirty consecutive graphics and office tools.
+        let ordered=["Bureautique","Productivité","Graphisme","Création",
+                     "Jeux","Sécurité","Internet","Audio & musique",
+                     "Multimédia","Réseau","Utilitaires","Personnalisation",
+                     "Éducation","Accessibilité","Développement","Auto-hébergé"]
+        let buckets=Dictionary(grouping:matching,by:{ $0.category })
+        let largest=buckets.values.map(\.count).max() ?? 0
+        var arranged:[OrbitReplacement]=[]
+        for index in 0..<largest {
+            for name in ordered {
+                if let items=buckets[name],index<items.count {
+                    arranged.append(items[index])
+                }
+            }
+        }
+        return arranged
     }
 
     private func open(_ item:OrbitReplacement) {
