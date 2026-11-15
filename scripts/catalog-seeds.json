@@ -117,7 +117,7 @@
   {
     "repo": "CorsixTH/CorsixTH",
     "name": "CorsixTH",
-    "category": "Jeux"
+    "category": "Lanceurs & émulation"
   },
   {
     "repo": "scummvm/scummvm",
@@ -377,7 +377,7 @@
   {
     "repo": "standardnotes/app",
     "name": "Standard Notes",
-    "category": "Productivité"
+    "category": "Bureautique"
   },
   {
     "repo": "pulsar-edit/pulsar",
@@ -502,7 +502,7 @@
   {
     "repo": "siyuan-note/siyuan",
     "name": "SiYuan",
-    "category": "Productivité"
+    "category": "Bureautique"
   },
   {
     "repo": "storytold/photocraft",
@@ -563,5 +563,65 @@
     "repo": "OpenLoco/OpenLoco",
     "name": "OpenLoco",
     "category": "Jeux"
+  },
+  {
+    "repo": "jgraph/drawio-desktop",
+    "name": "draw.io Desktop",
+    "category": "Bureautique"
+  },
+  {
+    "repo": "obsidianmd/obsidian-releases",
+    "name": "Obsidian",
+    "category": "Bureautique"
+  },
+  {
+    "repo": "logseq/logseq",
+    "name": "Logseq",
+    "category": "Bureautique"
+  },
+  {
+    "repo": "Zettlr/Zettlr",
+    "name": "Zettlr",
+    "category": "Bureautique"
+  },
+  {
+    "repo": "marktext/marktext",
+    "name": "MarkText",
+    "category": "Bureautique"
+  },
+  {
+    "repo": "toeverything/AFFiNE",
+    "name": "AFFiNE",
+    "category": "Bureautique"
+  },
+  {
+    "repo": "koodo-reader/koodo-reader",
+    "name": "Koodo Reader",
+    "category": "Bureautique"
+  },
+  {
+    "repo": "drwhut/tabletop-club",
+    "name": "Tabletop Club",
+    "category": "Jeux"
+  },
+  {
+    "repo": "yairm210/Unciv",
+    "name": "Unciv",
+    "category": "Jeux"
+  },
+  {
+    "repo": "TETR-IO/desktop",
+    "name": "TETR.IO",
+    "category": "Jeux"
+  },
+  {
+    "repo": "LibreSprite/LibreSprite",
+    "name": "LibreSprite",
+    "category": "Graphisme"
+  },
+  {
+    "repo": "upscayl/upscayl",
+    "name": "Upscayl",
+    "category": "Graphisme"
   }
 ]
