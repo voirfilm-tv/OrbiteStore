@@ -40,8 +40,8 @@ enum Inventory {
         .init(repo:"wesnoth/wesnoth",name:"Battle for Wesnoth",category:"Jeux",icon:"gamecontroller",aliases:["Wesnoth"]),
         .init(repo:"warzone2100/warzone2100",name:"Warzone 2100",category:"Jeux",icon:"gamecontroller",aliases:[]),
         .init(repo:"ppy/osu",name:"osu!",category:"Jeux",icon:"gamecontroller",aliases:["osu"]),
-        .init(repo:"PrismLauncher/PrismLauncher",name:"Prism Launcher",category:"Jeux",icon:"gamecontroller",aliases:[]),
-        .init(repo:"godotengine/godot",name:"Godot Engine",category:"Jeux",icon:"gamecontroller",aliases:["Godot"]),
+        .init(repo:"PrismLauncher/PrismLauncher",name:"Prism Launcher",category:"Lanceurs & émulation",icon:"gamecontroller",aliases:[]),
+        .init(repo:"godotengine/godot",name:"Godot Engine",category:"Développement",icon:"gamecontroller",aliases:["Godot"]),
         .init(repo:"audacity/audacity",name:"Audacity",category:"Audio & musique",icon:"music.note",aliases:[]),
         .init(repo:"mixxxdj/mixxx",name:"Mixxx",category:"Audio & musique",icon:"music.note",aliases:[]),
         .init(repo:"LMMS/lmms",name:"LMMS",category:"Audio & musique",icon:"music.note",aliases:[]),
@@ -62,9 +62,21 @@ enum Inventory {
         .init(repo:"mac-mouse-fix/mac-mouse-fix",name:"Mac Mouse Fix",category:"Accessibilité",icon:"computermouse",aliases:[]),
         .init(repo:"dbeaver/dbeaver",name:"DBeaver",category:"Développement",icon:"externaldrive",aliases:[]),
         .init(repo:"sindresorhus/Plash",name:"Plash",category:"Personnalisation",icon:"desktopcomputer",aliases:[]),
+        .init(repo:"OpenTTD/OpenTTD",name:"OpenTTD",category:"Jeux",icon:"gamecontroller.fill",aliases:[]),
+        .init(repo:"OpenRCT2/OpenRCT2",name:"OpenRCT2",category:"Jeux",icon:"gamecontroller.fill",aliases:[]),
+        .init(repo:"MindustryGame/mindustry",name:"Mindustry",category:"Jeux",icon:"gamecontroller.fill",aliases:[]),
+        .init(repo:"The-Powder-Toy/The-Powder-Toy",name:"The Powder Toy",category:"Jeux",icon:"gamecontroller.fill",aliases:[]),
+        .init(repo:"FreeOrion/FreeOrion",name:"FreeOrion",category:"Jeux",icon:"gamecontroller.fill",aliases:[]),
+        .init(repo:"CleverRaven/Cataclysm-DDA",name:"Cataclysm: DDA",category:"Jeux",icon:"gamecontroller.fill",aliases:[]),
+        .init(repo:"Heroic-Games-Launcher/HeroicGamesLauncher",name:"Heroic Games Launcher",category:"Lanceurs & émulation",icon:"arcade.stick",aliases:["Heroic"]),
+        .init(repo:"Dolphin-emu/dolphin",name:"Dolphin Emulator",category:"Lanceurs & émulation",icon:"arcade.stick",aliases:[]),
+        .init(repo:"hrydgard/ppsspp",name:"PPSSPP",category:"Lanceurs & émulation",icon:"arcade.stick",aliases:[]),
+        .init(repo:"OpenEmu/OpenEmu",name:"OpenEmu",category:"Lanceurs & émulation",icon:"arcade.stick",aliases:[]),
+        .init(repo:"libretro/RetroArch",name:"RetroArch",category:"Lanceurs & émulation",icon:"arcade.stick",aliases:[]),
+        .init(repo:"itchio/itch",name:"itch.io",category:"Lanceurs & émulation",icon:"arcade.stick",aliases:[]),
         .init(repo:"voirfilm-tv/OrbiteStore",name:"OrbitStore",category:"Utilitaires",icon:"square.stack.3d.up.fill",aliases:["OrbiteStore"])
     ]
-    static let categories = ["Tout", "Jeux", "Création", "Graphisme", "Audio & musique", "Multimédia", "Productivité", "Bureautique", "Éducation", "Développement", "Sécurité", "Réseau", "Internet", "Utilitaires", "Personnalisation", "Accessibilité"]
+    static let categories = ["Tout", "Jeux", "Lanceurs & émulation", "Création", "Graphisme", "Audio & musique", "Multimédia", "Productivité", "Bureautique", "Éducation", "Développement", "Sécurité", "Réseau", "Internet", "Utilitaires", "Personnalisation", "Accessibilité"]
 }
 
 // Small pre-indexed GitHub catalog built by a scheduled server-side Action.
