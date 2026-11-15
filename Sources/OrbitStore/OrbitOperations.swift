@@ -82,6 +82,16 @@ enum OrbitShell {
     }
 }
 
+enum OrbitArchivePolicy {
+    static func isSafeEntry(_ raw:String)->Bool {
+        let normalized=raw.replacingOccurrences(of:"\\",with:"/")
+        let components=normalized.split(separator:"/",omittingEmptySubsequences:false)
+        return !normalized.hasPrefix("/") &&
+               !normalized.contains("\0") &&
+               !components.contains("..")
+    }
+}
+
 enum OrbitPackageInstaller {
     static func install(package:URL, targetDirectory:URL, expectedBundleID:String?,
                         runningBundleIDs:Set<String>) throws -> OrbitInstallResult {
@@ -122,8 +132,7 @@ enum OrbitPackageInstaller {
             let (status,listing)=try OrbitShell.run("/usr/bin/unzip",["-Z","-1",package.path])
             guard status == 0 else { throw OrbitInstallError.unsafe("Liste ZIP illisible.") }
             for raw in listing.components(separatedBy:"\n").filter({ !$0.isEmpty }) {
-                let parts=raw.replacingOccurrences(of:"\\",with:"/").split(separator:"/")
-                guard !raw.hasPrefix("/"), !parts.contains(".."), !raw.contains("\0") else {
+                guard OrbitArchivePolicy.isSafeEntry(raw) else {
                     throw OrbitInstallError.unsafe("Chemin dangereux dans l'archive.")
                 }
             }
