@@ -497,6 +497,8 @@ struct InstalledDetails: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var store: StoreModel
     @State private var chosenEcosystem: Ecosystem?
+    @State private var related: [PluginRecord] = []
+    @State private var searchingRelated = true
     let app: MacApp
     var body: some View {
         VStack(alignment:.leading,spacing:18) {
@@ -515,12 +517,38 @@ struct InstalledDetails: View {
             Text("Extensions et outils compatibles").font(.title2.bold())
             let ecosystems=Ecosystems.matches(app.name)
             if ecosystems.isEmpty {
-                VStack(spacing:12) {
-                    Image(systemName:"puzzlepiece").font(.largeTitle).foregroundStyle(.secondary)
-                    Text("Aucune ressource recensée").font(.headline)
-                    Text("OrbitStore ne connaît pas encore d'écosystème pour cette application.")
+                if searchingRelated {
+                    ProgressView("Recherche de projets associés sur GitHub…")
+                        .frame(maxWidth:.infinity,minHeight:130)
+                } else if related.isEmpty {
+                    VStack(spacing:12) {
+                        Image(systemName:"puzzlepiece").font(.largeTitle).foregroundStyle(.secondary)
+                        Text("Aucune extension à proposer").font(.headline)
+                        Text("OrbitStore n'a pas trouvé de projet associé. Cette recherche n'est pas exhaustive.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }.frame(maxWidth:.infinity,minHeight:130)
+                } else {
+                    Text("Pistes GitHub · compatibilité non vérifiée")
                         .font(.caption).foregroundStyle(.secondary)
-                }.frame(maxWidth:.infinity,minHeight:170)
+                    ScrollView {
+                        LazyVStack(spacing:8) {
+                            ForEach(related.prefix(30)) { item in
+                                HStack {
+                                    VStack(alignment:.leading,spacing:3) {
+                                        Text(item.name).font(.headline)
+                                        Text(item.summary).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                                    }
+                                    Spacer()
+                                    if let url=URL(string:item.url),url.scheme=="https" {
+                                        Button("Source") { NSWorkspace.shared.open(url) }.buttonStyle(.bordered)
+                                    }
+                                }
+                                .padding(10)
+                                .background(.quaternary.opacity(0.3),in:RoundedRectangle(cornerRadius:10))
+                            }
+                        }
+                    }.frame(maxHeight:180)
+                }
             } else {
                 ForEach(ecosystems) { e in
                     HStack {
@@ -547,8 +575,14 @@ struct InstalledDetails: View {
             }
         }
         .padding(26)
-        .frame(width:650,height:440)
+        .frame(width:650,height:480)
         .sheet(item:$chosenEcosystem) { ExtensionBrowser(ecosystem:$0) }
+        .task {
+            if Ecosystems.matches(app.name).isEmpty {
+                related = (try? await PluginDirectory.relatedToUnknownApp(app.name)) ?? []
+            }
+            searchingRelated = false
+        }
     }
 }
 
