@@ -87,6 +87,24 @@ class AssetClassificationTests(unittest.TestCase):
         self.assertEqual(names["obsidianmd/obsidian-releases"],"Bureautique")
         self.assertFalse(catalog.is_macos_asset("office-source.zip"))
 
+    def test_every_public_category_has_curated_recommendations(self):
+        from pathlib import Path
+        data=(ROOT/"Sources/OrbitStore/OrbitSpotlightShelf.swift").read_text(encoding="utf-8")
+        for category in ("Jeux","Bureautique","Productivité","Création",
+                         "Graphisme","Audio & musique","Multimédia","Éducation",
+                         "Sécurité","Réseau","Internet","Utilitaires",
+                         "Personnalisation","Accessibilité","Développement",
+                         "Lanceurs & émulation"):
+            self.assertIn('category:"'+category+'"',data)
+        self.assertGreaterEqual(data.count(".init(name:"),140)
+
+    def test_alternative_directory_is_broad_and_filters_by_use(self):
+        data=(ROOT/"Sources/OrbitStore/OrbitAlternativesPage.swift").read_text(encoding="utf-8")
+        self.assertGreaterEqual(data.count(".init(name:"),100)
+        self.assertIn("localizedCaseInsensitiveContains",data)
+        self.assertIn("availability==",data)
+        self.assertIn("Audio & musique",data)
+
     def test_no_frameworks_in_games(self):
         repo={"name":"Engine X","description":"A game engine","topics":["game-engine"]}
         self.assertEqual(catalog.classify("Jeux",repo,False),"Développement")
