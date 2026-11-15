@@ -55,6 +55,7 @@ struct StoreWindow: View {
     @State private var selectedEcosystem: Ecosystem?
     @State private var catalogPresence = "Toutes"
     @State private var catalogSort = "Recommandé"
+    @State private var gameGenre = "Tous"
     @State private var catalogMacFilter = "Paquets macOS"
     @State private var catalogPageSize = 60
     @State private var remoteFilter = "Tous"
@@ -88,6 +89,9 @@ struct StoreWindow: View {
         if catalogMacFilter == "Paquets macOS" && !store.indexedApps.isEmpty {
             items=items.filter { store.catalogIsVerifiedMac($0) }
         }
+        if section == "Jeux" && gameGenre != "Tous" && search.isEmpty {
+            items=items.filter { store.catalogGameGenre($0)==gameGenre }
+        }
         if catalogPresence == "Installées" {
             items=items.filter { !store.matches($0).isEmpty }
         } else if catalogPresence == "Non installées" {
@@ -98,6 +102,8 @@ struct StoreWindow: View {
         } else if catalogSort == "Nom A–Z" {
             items.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         } else if catalogSort == "Popularité" {
+            items.sort { store.catalogPopularityScore($0) > store.catalogPopularityScore($1) }
+        } else if catalogSort == "Étoiles GitHub" {
             items.sort { store.catalogStars($0) > store.catalogStars($1) }
         } else if catalogSort == "Activité récente" {
             items.sort { store.catalogUpdatedAt($0) > store.catalogUpdatedAt($1) }
@@ -301,7 +307,7 @@ struct StoreWindow: View {
             operations.notifyDigest(store:store)
             operations.offerManagedUpdates(store:store)
         }
-        .onChange(of:section) { _ in catalogPageSize=60; search="" }
+        .onChange(of:section) { _ in catalogPageSize=60; search=""; gameGenre="Tous" }
         .task { await updater.check() }
         .onChange(of:store.developerMode) { newValue in
             if !newValue && ["Développement","Lanceurs & émulation"].contains(section) {
@@ -419,11 +425,21 @@ struct StoreWindow: View {
                 }.pickerStyle(.menu).frame(width:160)
                 Picker("Trier",selection:$catalogSort) {
                     Text("Pour vous").tag("Recommandé")
-                    Text("★ Popularité").tag("Popularité")
+                    Text("Populaires").tag("Popularité")
+                    Text("★ Étoiles GitHub").tag("Étoiles GitHub")
                     Text("Activité récente").tag("Activité récente")
                     Text("Nom A–Z").tag("Nom A–Z")
                     Text("Sélection initiale").tag("Sélection")
                 }.pickerStyle(.menu).frame(width:170)
+                if section == "Jeux" {
+                    Picker("Genre",selection:$gameGenre) {
+                        Text("Tous les genres").tag("Tous")
+                        ForEach(["Stratégie","Gestion","Jeux de plateau","Simulation",
+                                 "Action","Course","Rôle","Rythme"],id:\.self) { genre in
+                            Text(genre).tag(genre)
+                        }
+                    }.pickerStyle(.menu).frame(width:170)
+                }
                 if store.developerMode {
                     Picker("Disponibilité",selection:$catalogMacFilter) {
                         Text("Paquets macOS").tag("Paquets macOS")
@@ -633,7 +649,8 @@ struct StoreWindow: View {
                 AuthenticAppIcon(repo:entry.repo,name:entry.name,
                     installedPath:store.matches(entry).first?.path,
                     branch:store.info[entry.repo]?.default_branch,
-                    homepage:store.info[entry.repo]?.homepage,size:59)
+                    homepage:store.info[entry.repo]?.homepage,
+                     iconURL:store.catalogIconURL(entry),size:59)
                 Spacer()
                 if !store.matches(entry).isEmpty {
                     Image(systemName:"checkmark.circle.fill").foregroundStyle(.green)
