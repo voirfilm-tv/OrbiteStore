@@ -256,6 +256,8 @@ CONSUMER_REPOS = {
 def classify_audience(repo: dict, category: str, asset: str) -> str:
     """Hide technical projects unless developer mode is enabled."""
     key = (repo.get("full_name") or "").casefold()
+    if category == "Lanceurs & émulation":
+        return "developer"
     if key in CONSUMER_REPOS:
         return "consumer"
     if key in DEVELOPER_REPOS or category == "Développement":
