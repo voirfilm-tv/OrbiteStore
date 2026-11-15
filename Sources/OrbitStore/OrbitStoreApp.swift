@@ -53,6 +53,17 @@ struct StoreWindow: View {
     @State private var updatesScope = "Toutes"
     @State private var updatesSort = "A–Z"
     private let columns = [GridItem(.adaptive(minimum:218,maximum:300),spacing:14)]
+    private var remoteSearchSection: Bool {
+        !["Installées","Écosystèmes","Mises à jour","Préférences"].contains(section)
+    }
+    private var searchPrompt: String {
+        switch section {
+        case "Installées": return "Rechercher une application installée"
+        case "Écosystèmes": return "Rechercher un écosystème"
+        case "Mises à jour": return "Rechercher une mise à jour"
+        default: return "Rechercher sur GitHub et OrbitStore"
+        }
+    }
     private var filtered: [CatalogApp] {
         var items=Inventory.catalog.filter { item in
             (search.isEmpty ? (section == "Découvrir" || section == "Tout" || section == item.category) : true)
@@ -99,7 +110,10 @@ struct StoreWindow: View {
     }
 
     private var visibleInstalled: [MacApp] {
-        var items=store.installed
+        var items=store.installed.filter {
+            search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) ||
+                $0.bundleID.localizedCaseInsensitiveContains(search)
+        }
         if installedScope == "Extensions connues" {
             items=items.filter { !Ecosystems.matches($0.name).isEmpty }
         } else if installedScope == "Autres applications" {
@@ -116,7 +130,10 @@ struct StoreWindow: View {
     }
 
     private var visibleEcosystems: [Ecosystem] {
-        var items=Ecosystems.all
+        var items=Ecosystems.all.filter {
+            search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) ||
+                $0.description.localizedCaseInsensitiveContains(search)
+        }
         if ecosystemScope == "Logiciels installés" {
             items=items.filter { item in
                 store.installed.contains { app in Ecosystems.matches(app.name).contains(where: { $0.id == item.id }) }
@@ -135,7 +152,11 @@ struct StoreWindow: View {
     }
 
     private var visibleUpdates: [CatalogApp] {
-        var items=Inventory.catalog.filter { !store.matches($0).isEmpty }
+        var items=Inventory.catalog.filter {
+            !store.matches($0).isEmpty &&
+            (search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) ||
+             $0.repo.localizedCaseInsensitiveContains(search))
+        }
         if updatesScope == "Disponibles" {
             items=items.filter { store.updateAvailable($0) }
         } else if updatesScope == "Non vérifiées" {
@@ -184,7 +205,8 @@ struct StoreWindow: View {
         } detail: {
             ScrollView {
                 VStack(alignment:.leading,spacing:22) {
-                    if !search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    if !search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+                       remoteSearchSection {
                         searchPage
                     } else {
                         switch section {
@@ -207,7 +229,7 @@ struct StoreWindow: View {
                 .frame(maxWidth:.infinity)
             }
             .background(Color(nsColor:.windowBackgroundColor))
-            .searchable(text:$search,placement:.toolbar,prompt:"Rechercher sur GitHub et OrbitStore")
+            .searchable(text:$search,placement:.toolbar,prompt:searchPrompt)
             .toolbar {
                 ToolbarItemGroup(placement:.primaryAction) {
                     if store.busy { ProgressView().controlSize(.small) }
@@ -227,7 +249,8 @@ struct StoreWindow: View {
         .sheet(item:$selectedEcosystem) { ecosystem in
             ExtensionBrowser(ecosystem:ecosystem)
         }
-        .task(id:search) {
+        .task(id:section + "|" + search) {
+            guard remoteSearchSection else { return }
             try? await Task.sleep(nanoseconds: 550_000_000)
             guard !Task.isCancelled else { return }
             await discovery.search(search)
