@@ -538,6 +538,72 @@ enum OrbitSpotlights {
               subtitle:"Exécuter certaines apps Windows sur Mac",source:"Éditeur",
               link:"https://www.codeweavers.com/crossover",steamID:nil,symbol:"desktopcomputer")
     ]
+    // No client-side discovery request: these icons come from the cached
+    // release index only, when the server verified a canonical logo path.
+    static let iconRepos:[String:String] = [
+        "SuperTuxKart":"supertuxkart/stk-code",
+        "0 A.D.":"0ad/0ad",
+        "Obsidian":"obsidianmd/obsidian-releases",
+        "draw.io":"jgraph/drawio-desktop",
+        "Joplin":"laurent22/joplin",
+        "Zotero":"zotero/zotero",
+        "AppFlowy":"AppFlowy-IO/AppFlowy",
+        "Kdenlive":"KDE/kdenlive",
+        "Shotcut":"mltframework/shotcut",
+        "OBS Studio":"obsproject/obs-studio",
+        "Blender":"blender/blender",
+        "GIMP":"GNOME/gimp",
+        "Krita":"KDE/krita",
+        "Inkscape":"inkscape/inkscape",
+        "darktable":"darktable-org/darktable",
+        "Upscayl":"upscayl/upscayl",
+        "Audacity":"audacity/audacity",
+        "MuseScore Studio":"musescore/MuseScore",
+        "Mixxx":"mixxxdj/mixxx",
+        "LMMS":"LMMS/lmms",
+        "IINA":"iina/iina",
+        "HandBrake":"HandBrake/HandBrake",
+        "Kodi":"xbmc/xbmc",
+        "LosslessCut":"mifi/lossless-cut",
+        "Anki":"ankitects/anki",
+        "KeePassXC":"keepassxreboot/keepassxc",
+        "Bitwarden":"bitwarden/clients",
+        "Proton VPN":"ProtonVPN/mac-app",
+        "Mullvad VPN":"mullvad/mullvadvpn-app",
+        "Cryptomator":"cryptomator/cryptomator",
+        "RustDesk":"rustdesk/rustdesk",
+        "LocalSend":"localsend/localsend",
+        "Tailscale":"tailscale/tailscale",
+        "qBittorrent":"qbittorrent/qBittorrent",
+        "Transmission":"transmission/transmission",
+        "Cyberduck":"iterate-ch/cyberduck",
+        "Brave":"brave/brave-browser",
+        "Zen Browser":"zen-browser/desktop",
+        "Signal":"signalapp/Signal-Desktop",
+        "Rectangle":"rxhanson/Rectangle",
+        "Pearcleaner":"alienator88/Pearcleaner",
+        "Stats":"exelban/stats",
+        "MonitorControl":"MonitorControl/MonitorControl",
+        "UTM":"utmapp/UTM",
+        "AltTab":"alt-tab-macos/alt-tab-macos",
+        "Ice":"jordanbaird/Ice",
+        "Karabiner-Elements":"pqrs-org/Karabiner-Elements",
+        "Mac Mouse Fix":"mac-mouse-fix/mac-mouse-fix",
+        "LinearMouse":"linearmouse/linearmouse",
+        "Gifski":"sindresorhus/Gifski",
+        "Maccy":"p0deje/Maccy",
+        "Espanso":"espanso/espanso",
+        "GitHub Desktop":"desktop/desktop",
+        "Zed":"zed-industries/zed",
+        "Insomnia":"Kong/insomnia",
+        "Bruno":"usebruno/bruno",
+        "Prism Launcher":"PrismLauncher/PrismLauncher",
+        "OpenEmu":"OpenEmu/OpenEmu",
+        "RetroArch":"libretro/RetroArch",
+        "Heroic Games Launcher":"Heroic-Games-Launcher/HeroicGamesLauncher",
+        "Unciv":"yairm210/Unciv",
+        "Tabletop Club":"drwhut/tabletop-club"
+    ]
     static let games = all.filter { $0.category == "Jeux" }
     static let office = all.filter { $0.category == "Bureautique" }
     static func forCategory(_ category:String) -> [OrbitSpotlightApp] {
@@ -551,6 +617,7 @@ private struct OrbitSpotlightGroup: Identifiable {
 }
 
 struct OrbitSpotlightShelf: View {
+    @EnvironmentObject private var store:StoreModel
     let section: String
     let gameGenre: String
 
@@ -605,7 +672,13 @@ struct OrbitSpotlightShelf: View {
                                                 .fill(LinearGradient(
                                                     colors:[Color.indigo.opacity(0.20),Color.purple.opacity(0.10)],
                                                     startPoint:.topLeading,endPoint:.bottomTrailing))
-                                            if let url=app.artworkURL {
+                                            if let repo=OrbitSpotlights.iconRepos[app.name],
+                                               let iconURL=store.catalogIconURL(
+                                                CatalogApp(repo:repo,name:app.name,
+                                                    category:app.category,icon:app.symbol,aliases:[])) {
+                                                AuthenticAppIcon(repo:repo,name:app.name,
+                                                    iconURL:iconURL,size:82)
+                                            } else if let url=app.artworkURL {
                                                 AsyncImage(url:url) { image in
                                                     image.resizable().scaledToFill()
                                                 } placeholder: {
