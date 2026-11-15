@@ -264,7 +264,7 @@ actor RepositoryLogoService {
         activeRequests += 1
         defer { activeRequests -= 1 }
         let key=repo+"|"+(homepage ?? "")
-        guard !unavailable.contains(key),repo.split(separator:"/").count==2 else {return nil}
+        guard repo.split(separator:"/").count==2 else {return nil}
         // An explicitly indexed app icon is preferred. The URL is constrained
         // to the canonical repository on GitHub's raw content host.
         if let iconURL, let url=URL(string:iconURL),
@@ -276,6 +276,7 @@ actor RepositoryLogoService {
             saveDisk(bytes,repo:repo)
             return bytes
         }
+        if unavailable.contains(key) { return nil }
         // A persistent failure TTL protects against re-downloading a missing
         // logo on every launch, without caching failures indefinitely.
         let retryKey="orbit.icon.miss."+repo.lowercased()
