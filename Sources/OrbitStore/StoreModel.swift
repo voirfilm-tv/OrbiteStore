@@ -61,7 +61,8 @@ enum Inventory {
         .init(repo:"pqrs-org/Karabiner-Elements",name:"Karabiner-Elements",category:"Personnalisation",icon:"keyboard",aliases:[]),
         .init(repo:"mac-mouse-fix/mac-mouse-fix",name:"Mac Mouse Fix",category:"Accessibilité",icon:"computermouse",aliases:[]),
         .init(repo:"dbeaver/dbeaver",name:"DBeaver",category:"Développement",icon:"externaldrive",aliases:[]),
-        .init(repo:"sindresorhus/Plash",name:"Plash",category:"Personnalisation",icon:"desktopcomputer",aliases:[])
+        .init(repo:"sindresorhus/Plash",name:"Plash",category:"Personnalisation",icon:"desktopcomputer",aliases:[]),
+        .init(repo:"voirfilm-tv/OrbiteStore",name:"OrbitStore",category:"Utilitaires",icon:"square.stack.3d.up.fill",aliases:["OrbiteStore"])
     ]
     static let categories = ["Tout", "Jeux", "Création", "Graphisme", "Audio & musique", "Multimédia", "Productivité", "Bureautique", "Éducation", "Développement", "Sécurité", "Réseau", "Internet", "Utilitaires", "Personnalisation", "Accessibilité"]
 }
@@ -196,63 +197,136 @@ final class StoreModel: ObservableObject {
         UserDefaults.standard.set(enabled, forKey:"orbit.autoDownloads")
     }
 
+    // Display names are not stable identifiers. In particular, the GitHub
+    // repository "OrbiteStore" intentionally differs from the macOS app's
+    // CFBundleDisplayName ("OrbitStore"). Known bundle IDs take priority.
+    private let knownBundleIDs = [
+        "voirfilm-tv/orbitestore": "fr.orbitstore.mac"
+    ]
+
     func scan() {
         let fm = FileManager.default
         let home = fm.homeDirectoryForCurrentUser
-        let roots = [URL(fileURLWithPath:"/Applications"),home.appendingPathComponent("Applications"),URL(fileURLWithPath:"/System/Applications")]
+        let roots: [URL] = [
+            URL(fileURLWithPath:"/Applications",isDirectory:true),
+            home.appendingPathComponent("Applications",isDirectory:true),
+            URL(fileURLWithPath:"/System/Applications",isDirectory:true)
+        ]
         var found: [MacApp] = []
-        func walk(_ folder:URL, depth:Int) {
-            guard let paths = try? fm.contentsOfDirectory(at:folder, includingPropertiesForKeys:[.isDirectoryKey], options:[.skipsHiddenFiles]) else { return }
-            for path in paths {
-                if path.pathExtension.lowercased() == "app" {
-                    let bundle = Bundle(url:path)
-                    let name = (bundle?.object(forInfoDictionaryKey:"CFBundleDisplayName") as? String)
-                        ?? (bundle?.object(forInfoDictionaryKey:"CFBundleName") as? String)
-                        ?? path.deletingPathExtension().lastPathComponent
-                    let version = (bundle?.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String)
-                        ?? (bundle?.object(forInfoDictionaryKey:"CFBundleVersion") as? String) ?? "?"
-                    found.append(MacApp(path:path.path,name:name,version:version,bundleID:bundle?.bundleIdentifier ?? ""))
-                } else if depth > 0 {
-                    walk(path,depth:depth-1)
+        func add(_ candidate: URL) {
+            let url = candidate.standardizedFileURL.resolvingSymlinksInPath()
+            guard url.pathExtension.lowercased() == "app",
+                  !url.path.hasPrefix("/Volumes/"),
+                  !url.path.hasPrefix("/System/Volumes/"),
+                  fm.fileExists(atPath:url.path),
+                  let bundle=Bundle(url:url) else { return }
+            let name=(bundle.object(forInfoDictionaryKey:"CFBundleDisplayName") as? String)
+                ?? (bundle.object(forInfoDictionaryKey:"CFBundleName") as? String)
+                ?? url.deletingPathExtension().lastPathComponent
+            let version=(bundle.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String)
+                ?? (bundle.object(forInfoDictionaryKey:"CFBundleVersion") as? String)
+                ?? "?"
+            found.append(MacApp(path:url.path,name:name,version:version,bundleID:bundle.bundleIdentifier ?? ""))
+        }
+        func walk(_ folder: URL, depth: Int) {
+            guard let paths=try? fm.contentsOfDirectory(
+                at:folder,includingPropertiesForKeys:[.isDirectoryKey],options:[.skipsHiddenFiles]
+            ) else { return }
+            for url in paths {
+                if url.pathExtension.lowercased() == "app" {
+                    add(url)
+                } else if depth > 0,
+                          (try? url.resourceValues(forKeys:[.isDirectoryKey]).isDirectory) == true {
+                    walk(url,depth:depth-1)
                 }
             }
         }
-        roots.forEach { walk($0,depth:1) }
-        let unique = Dictionary(grouping:found,by:\.path).compactMap { $0.value.first }
-        let current = unique.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        let added = current.filter { !seen.contains($0.path) }
-        seen = Set(current.map(\.path))
-        installed = current
+        // Standard installations and common subfolders (e.g. Setapp).
+        roots.forEach { walk($0,depth:2) }
+
+        // LaunchServices can resolve applications that were moved by the user.
+        // Running apps may also live in non-standard folders. Exclude mounted
+        // disk images: opening a DMG alone does not mean the app is installed.
+        if let registered=NSWorkspace.shared.urlForApplication(withBundleIdentifier:"fr.orbitstore.mac") {
+            add(registered)
+        }
+        let ownURL=Bundle.main.bundleURL
+        if ownURL.pathExtension.lowercased() == "app" { add(ownURL) }
+        for process in NSWorkspace.shared.runningApplications {
+            if let url=process.bundleURL { add(url) }
+        }
+
+        let unique=Dictionary(grouping:found,by:\.path).compactMap { $0.value.first }
+        let current=unique.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        let added=current.filter { !seen.contains($0.path) }
+        seen=Set(current.map(\.path))
+        installed=current
+
         if hasInitialInventory && notificationsEnabled {
-            // Never scan all apps over the network at launch. Only new installations,
-            // and only a small batch per local file-system scan.
+            // A small batch prevents an API flood after a software update.
             for app in added.prefix(3) {
                 Task {
-                    if let ecosystem = Ecosystems.matches(app.name).first {
-                        if let records = try? await PluginDirectory.load(ecosystem) {
-                            extensionCount[ecosystem.id] = records.count
+                    if let ecosystem=Ecosystems.matches(app.name).first {
+                        if let records=try? await PluginDirectory.load(ecosystem) {
+                            extensionCount[ecosystem.id]=records.count
                             if !records.isEmpty {
                                 notify("Extensions disponibles pour \(app.name)",
-                                       body:"\(records.count) ressources trouvées dans OrbitStore. Compatibilité à vérifier.")
+                                       body:"\(records.count) ressources trouvées. Compatibilité à vérifier.")
                             }
                         }
-                    } else if let records = try? await PluginDirectory.relatedToUnknownApp(app.name),
+                    } else if let records=try? await PluginDirectory.relatedToUnknownApp(app.name),
                               !records.isEmpty {
                         notify("Projets associés à \(app.name)",
-                               body:"\(records.count) pistes trouvées sur GitHub. Compatibilité non vérifiée.")
+                               body:"\(records.count) projets trouvés sur GitHub. Compatibilité non vérifiée.")
                     }
                 }
             }
         }
-        hasInitialInventory = true
+        hasInitialInventory=true
+    }
+
+    private func normalizedAppName(_ value: String) -> String {
+        let folded=value.folding(options:[.diacriticInsensitive,.caseInsensitive],locale:Locale(identifier:"en_US_POSIX"))
+        return String(folded.unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) })
     }
 
     func matches(_ entry:CatalogApp) -> [MacApp] {
-        installed.filter { installedApp in
-            [entry.name] + entry.aliases == [] ? false :
-            ([entry.name] + entry.aliases).contains { alias in
-                installedApp.name.caseInsensitiveCompare(alias) == .orderedSame
-            }
+        let repoKey=entry.repo.lowercased()
+        let knownID=knownBundleIDs[repoKey]
+        let allowed=Set(([entry.name] + entry.aliases).map(normalizedAppName))
+        return installed.filter { app in
+            if let id=knownID, app.bundleID.caseInsensitiveCompare(id) == .orderedSame { return true }
+            // Exact normalized alias is a discovery hint, not a trusted
+            // publisher identity for automatic installation/update.
+            return allowed.contains(normalizedAppName(app.name))
+        }
+    }
+
+    func downloadedFile(for entry:CatalogApp) -> URL? {
+        let saved=downloaded[entry.repo] ?? UserDefaults.standard.string(forKey:"download.\(entry.repo)")
+        guard let path=saved, FileManager.default.fileExists(atPath:path) else { return nil }
+        return URL(fileURLWithPath:path)
+    }
+
+    func revealDownloaded(_ entry:CatalogApp) {
+        guard let file=downloadedFile(for:entry) else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([file])
+    }
+
+    func openDownloaded(_ entry:CatalogApp) {
+        guard let file=downloadedFile(for:entry) else { return }
+        // Never execute an unverified PKG, script, or binary.
+        let suffix=file.pathExtension.lowercased()
+        guard suffix == "dmg" || suffix == "zip" else {
+            revealDownloaded(entry)
+            return
+        }
+        if NSWorkspace.shared.open(file) {
+            status=suffix == "dmg"
+                ? "Image disque ouverte : glisse l'application vers Applications, puis vérifie sa détection."
+                : "Archive ouverte : vérifie le logiciel avant de l'installer."
+        } else {
+            errors[entry.repo]="macOS n'a pas pu ouvrir ce fichier. Affiche-le dans le Finder."
         }
     }
 
@@ -439,7 +513,8 @@ final class StoreModel: ObservableObject {
             }
             try FileManager.default.moveItem(at:temporary,to:target)
             downloaded[app.repo] = target.path
-            status = "Fichier enregistré dans Téléchargements/OrbitStore"
+            UserDefaults.standard.set(target.path,forKey:"download.\(app.repo)")
+            status = "Téléchargement terminé. Ouvre le DMG depuis la fiche pour terminer l'installation."
         } catch {
             errors[app.repo] = error.localizedDescription
             status = "Échec du téléchargement"
