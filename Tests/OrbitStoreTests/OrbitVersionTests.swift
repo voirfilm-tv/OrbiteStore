@@ -60,6 +60,13 @@ final class OrbitVersionTests: XCTestCase {
         XCTAssertFalse(fm.fileExists(atPath:target.appendingPathComponent("Unsigned.app").path))
     }
 
+    func testOrbitStoreSelfUpdateVersionOrdering() {
+        XCTAssertTrue(OrbitSelfUpdater.isNewer("v0.4.0",than:"0.3.1"))
+        XCTAssertTrue(OrbitSelfUpdater.isNewer("0.4.1-beta.1",than:"0.4.0"))
+        XCTAssertFalse(OrbitSelfUpdater.isNewer("v0.3.1",than:"0.3.1"))
+        XCTAssertFalse(OrbitSelfUpdater.isNewer("v0.3.0",than:"0.3.1"))
+        XCTAssertFalse(OrbitSelfUpdater.isNewer("bad",than:"0.3.1"))
+    }
     func testRepositoryIdentifiers() {
         XCTAssertNil(CatalogApp.fromRepositoryName("invalid-repo",name:"Invalid"))
         XCTAssertEqual(CatalogApp.fromRepositoryName("voirfilm-tv/OrbiteStore",name:"OrbitStore")?.repo,
