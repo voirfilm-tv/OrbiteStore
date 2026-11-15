@@ -32,15 +32,45 @@ enum Inventory {
         .init(repo:"sindresorhus/Velja",name:"Velja",category:"Utilitaires",icon:"safari",aliases:[]),
         .init(repo:"raycast/extensions",name:"Raycast Extensions",category:"Productivité",icon:"bolt.fill",aliases:["Raycast"]),
         .init(repo:"obsidianmd/obsidian-releases",name:"Obsidian",category:"Productivité",icon:"book.closed.fill",aliases:[]),
-        .init(repo:"ProtonVPN/mac-app",name:"Proton VPN",category:"Sécurité",icon:"network.badge.shield.half.filled",aliases:["ProtonVPN"])
+        .init(repo:"ProtonVPN/mac-app",name:"Proton VPN",category:"Sécurité",icon:"network.badge.shield.half.filled",aliases:["ProtonVPN"]),
+        .init(repo:"OpenRA/OpenRA",name:"OpenRA",category:"Jeux",icon:"gamecontroller",aliases:[]),
+        .init(repo:"endless-sky/endless-sky",name:"Endless Sky",category:"Jeux",icon:"gamecontroller",aliases:[]),
+        .init(repo:"SuperTux/supertux",name:"SuperTux",category:"Jeux",icon:"gamecontroller",aliases:[]),
+        .init(repo:"SuperTuxKart/stk-code",name:"SuperTuxKart",category:"Jeux",icon:"gamecontroller",aliases:[]),
+        .init(repo:"wesnoth/wesnoth",name:"Battle for Wesnoth",category:"Jeux",icon:"gamecontroller",aliases:["Wesnoth"]),
+        .init(repo:"warzone2100/warzone2100",name:"Warzone 2100",category:"Jeux",icon:"gamecontroller",aliases:[]),
+        .init(repo:"ppy/osu",name:"osu!",category:"Jeux",icon:"gamecontroller",aliases:["osu"]),
+        .init(repo:"PrismLauncher/PrismLauncher",name:"Prism Launcher",category:"Jeux",icon:"gamecontroller",aliases:[]),
+        .init(repo:"godotengine/godot",name:"Godot Engine",category:"Jeux",icon:"gamecontroller",aliases:["Godot"]),
+        .init(repo:"audacity/audacity",name:"Audacity",category:"Audio & musique",icon:"music.note",aliases:[]),
+        .init(repo:"mixxxdj/mixxx",name:"Mixxx",category:"Audio & musique",icon:"music.note",aliases:[]),
+        .init(repo:"LMMS/lmms",name:"LMMS",category:"Audio & musique",icon:"music.note",aliases:[]),
+        .init(repo:"ankitects/anki",name:"Anki",category:"Éducation",icon:"book",aliases:[]),
+        .init(repo:"zotero/zotero",name:"Zotero",category:"Éducation",icon:"book",aliases:[]),
+        .init(repo:"KDE/krita",name:"Krita",category:"Graphisme",icon:"paintbrush",aliases:[]),
+        .init(repo:"inkscape/inkscape",name:"Inkscape",category:"Graphisme",icon:"paintbrush",aliases:[]),
+        .init(repo:"darktable-org/darktable",name:"darktable",category:"Graphisme",icon:"photo",aliases:[]),
+        .init(repo:"brave/brave-browser",name:"Brave",category:"Internet",icon:"globe",aliases:["Brave Browser"]),
+        .init(repo:"minbrowser/min",name:"Min Browser",category:"Internet",icon:"globe",aliases:["Min"]),
+        .init(repo:"zen-browser/desktop",name:"Zen Browser",category:"Internet",icon:"globe",aliases:[]),
+        .init(repo:"AppFlowy-IO/AppFlowy",name:"AppFlowy",category:"Bureautique",icon:"doc.text",aliases:[]),
+        .init(repo:"laurent22/joplin",name:"Joplin",category:"Bureautique",icon:"doc.text",aliases:[]),
+        .init(repo:"keepassxreboot/keepassxc",name:"KeePassXC",category:"Sécurité",icon:"lock",aliases:[]),
+        .init(repo:"cryptomator/cryptomator",name:"Cryptomator",category:"Sécurité",icon:"lock",aliases:[]),
+        .init(repo:"alt-tab-macos/alt-tab-macos",name:"AltTab",category:"Personnalisation",icon:"square.grid.2x2",aliases:[]),
+        .init(repo:"pqrs-org/Karabiner-Elements",name:"Karabiner-Elements",category:"Personnalisation",icon:"keyboard",aliases:[]),
+        .init(repo:"mac-mouse-fix/mac-mouse-fix",name:"Mac Mouse Fix",category:"Accessibilité",icon:"computermouse",aliases:[]),
+        .init(repo:"dbeaver/dbeaver",name:"DBeaver",category:"Développement",icon:"externaldrive",aliases:[]),
+        .init(repo:"sindresorhus/Plash",name:"Plash",category:"Personnalisation",icon:"desktopcomputer",aliases:[])
     ]
-    static let categories = ["Tout", "Création", "Multimédia", "Productivité", "Développement", "Sécurité", "Réseau", "Utilitaires"]
+    static let categories = ["Tout", "Jeux", "Création", "Graphisme", "Audio & musique", "Multimédia", "Productivité", "Bureautique", "Éducation", "Développement", "Sécurité", "Réseau", "Internet", "Utilitaires", "Personnalisation", "Accessibilité"]
 }
 
 struct RepositoryInfo: Codable {
     let stargazers_count: Int
     let description: String?
     let html_url: String
+    let default_branch: String?
     let archived: Bool?
 }
 
