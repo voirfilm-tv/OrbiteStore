@@ -7,7 +7,7 @@ mkdir -p docs/screenshots
 capture() {
   local filename="$1" section="$2" query="$3"
   echo "Launching actual SwiftUI app, page: $section"
-  "$APP" "--screenshot-section=$section" "--screenshot-search=$query" >/tmp/orbitstore-capture.log 2>&1 &
+  "$APP" "--screenshot-section=$section" "--screenshot-search=$query" "${4:-}" >/tmp/orbitstore-capture.log 2>&1 &
   local pid=$!
   sleep 9
   local windowID
@@ -33,6 +33,7 @@ capture() {
 }
 capture discover.png "Découvrir" ""
 capture installed.png "Installées" ""
+capture details.png "Découvrir" "" "--screenshot-app=HandBrake"
 capture ecosystems.png "Écosystèmes" ""
 capture search.png "Découvrir" "obs"
-echo "Four authentic OrbitStore window captures validated."
+echo "Five authentic OrbitStore window captures validated."

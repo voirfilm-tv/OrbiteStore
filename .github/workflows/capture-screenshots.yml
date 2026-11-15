@@ -40,6 +40,9 @@ jobs:
           ### Discover / Découvrir
           ![OrbitStore actual Discover screen](docs/screenshots/discover.png)
 
+          ### App details / Fiche d'application
+          ![OrbitStore HandBrake detail page — actual SwiftUI macOS screenshot](docs/screenshots/details.png)
+
           ### Installed / Installées
           ![OrbitStore running on macOS showing detected installed applications](docs/screenshots/installed.png)
 
@@ -53,7 +56,7 @@ jobs:
           PY
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add README.md docs/screenshots/discover.png docs/screenshots/installed.png docs/screenshots/ecosystems.png docs/screenshots/search.png
+          git add README.md docs/screenshots/discover.png docs/screenshots/details.png docs/screenshots/installed.png docs/screenshots/ecosystems.png docs/screenshots/search.png
           if git diff --cached --quiet; then
             echo "Screenshots unchanged. No Pull Request needed."
             exit 0

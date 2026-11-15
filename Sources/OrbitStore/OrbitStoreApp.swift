@@ -40,7 +40,9 @@ struct StoreWindow: View {
     @EnvironmentObject private var operations: OrbitOperations
     @State private var section = ScreenshotLaunchArguments.value("--screenshot-section", fallback: "Découvrir")
     @State private var search = ScreenshotLaunchArguments.value("--screenshot-search", fallback: "")
-    @State private var selected: CatalogApp?
+    @State private var selected: CatalogApp? = Inventory.catalog.first {
+        $0.name == ScreenshotLaunchArguments.value("--screenshot-app",fallback:"")
+    }
     @State private var selectedInstalled: MacApp?
     @State private var showingHelp = false
     @StateObject private var discovery = GitHubDiscovery()

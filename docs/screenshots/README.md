@@ -4,6 +4,7 @@ This folder is only for **screenshots of the actual running OrbitStore macOS app
 
 Suggested names:
 - discover.png: Discover page / Découvrir
+- details.png: Native HandBrake detail sheet with working actions / Fiche HandBrake native
 - installed.png: Installed applications including running OrbitStore / Applications installées
 - ecosystems.png: Ecosystems / Écosystèmes
 - search.png: Real GitHub search / Recherche GitHub réelle

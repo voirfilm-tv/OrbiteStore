@@ -86,9 +86,7 @@ struct OrbitQueuePage: View {
                 OrbitStatusPill(text:"\(operations.jobs.filter{!$0.finished}.count) en attente",icon:"list.bullet")
                 OrbitStatusPill(text:"\(operations.jobs.filter{$0.phase=="Installée"}.count) réussies",icon:"checkmark.circle",tint:.green)
                 Spacer()
-                Button("Voir l'historique") {
-                    NSWorkspace.shared.open(URL(string:"https://github.com/voirfilm-tv/OrbiteStore")!)
-                }.hidden()
+
             }
             if !operations.jobs.isEmpty {
                 VStack(alignment:.leading,spacing:12) {
