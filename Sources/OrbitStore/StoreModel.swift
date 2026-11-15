@@ -67,6 +67,31 @@ enum Inventory {
     static let categories = ["Tout", "Jeux", "Création", "Graphisme", "Audio & musique", "Multimédia", "Productivité", "Bureautique", "Éducation", "Développement", "Sécurité", "Réseau", "Internet", "Utilitaires", "Personnalisation", "Accessibilité"]
 }
 
+// Small pre-indexed GitHub catalog built by a scheduled server-side Action.
+// An indexed item confirms the existence of a macOS *asset name* in an
+// upstream release. It does not establish executable signature or trust.
+struct IndexedMacApp: Decodable, Identifiable {
+    let repo:String
+    let name:String
+    let category:String
+    let summary:String
+    let stars:Int
+    let language:String?
+    let license:String?
+    let homepage:String?
+    let updated_at:String?
+    let release_tag:String
+    let asset_name:String
+    let verified_at:String
+    var id:String { repo.lowercased() }
+}
+private struct MacCatalogIndex: Decodable {
+    let schema:Int
+    let generated_at:String?
+    let count:Int
+    let entries:[IndexedMacApp]
+}
+
 struct RepositoryInfo: Codable {
     let stargazers_count: Int
     let description: String?
@@ -166,6 +191,110 @@ enum MacReleaseAvailability {
 @MainActor
 final class StoreModel: ObservableObject {
     @Published var installed: [MacApp] = []
+    @Published private(set) var indexedApps:[IndexedMacApp] = []
+    @Published private(set) var indexStatus = "Catalogue intégré"
+    @Published private(set) var indexGeneratedAt:String?
+    @Published private(set) var indexLoading = false
+    private var indexByRepo:[String:IndexedMacApp] = [:]
+    private let indexURL=URL(string:"https://raw.githubusercontent.com/voirfilm-tv/OrbiteStore/main/data/catalog-index.json")!
+
+    // Single catalog for every native view, search match and update check.
+    // Keep curated entries when the remote index is unavailable.
+    var catalog:[CatalogApp] {
+        let verified=Set(indexedApps.map{$0.repo.lowercased()})
+        var curated=Inventory.catalog.filter { entry in
+            let key=entry.repo.lowercased()
+            // When a populated index is available, don't pretend that
+            // unverified games are installable Mac games.
+            if !indexedApps.isEmpty && entry.category=="Jeux" && !verified.contains(key) {
+                return false
+            }
+            return true
+        }
+        let existing=Set(curated.map{$0.repo.lowercased()})
+        for item in indexedApps where !existing.contains(item.repo.lowercased()) {
+            let symbol=item.category=="Jeux" ? "gamecontroller.fill" :
+                       (item.category=="Lanceurs & émulation" ? "arcade.stick" : "square.stack.3d.up")
+            curated.append(CatalogApp(repo:item.repo,name:item.name,
+                                      category:item.category,icon:symbol,aliases:[]))
+        }
+        // Override stale, manually categorized entries using indexed metadata.
+        return curated.map { entry in
+            guard let indexed=indexByRepo[entry.repo.lowercased()] else { return entry }
+            if entry.category==indexed.category { return entry }
+            return CatalogApp(repo:entry.repo,name:entry.name,category:indexed.category,
+                              icon:entry.icon,aliases:entry.aliases)
+        }
+    }
+
+    func catalogDescription(_ entry:CatalogApp)->String {
+        let value=indexByRepo[entry.repo.lowercased()]?.summary
+        return info[entry.repo]?.description ?? ((value?.isEmpty == false) ? value! : entry.repo)
+    }
+    func catalogStars(_ entry:CatalogApp)->Int {
+        info[entry.repo]?.stargazers_count ?? indexByRepo[entry.repo.lowercased()]?.stars ?? 0
+    }
+    func catalogIsVerifiedMac(_ entry:CatalogApp)->Bool {
+        indexByRepo[entry.repo.lowercased()] != nil
+    }
+    func catalogReleaseTag(_ entry:CatalogApp)->String? {
+        indexByRepo[entry.repo.lowercased()]?.release_tag
+    }
+    func catalogLanguage(_ entry:CatalogApp)->String? {
+        indexByRepo[entry.repo.lowercased()]?.language
+    }
+    func catalogIndexedLicense(_ entry:CatalogApp)->String? {
+        indexByRepo[entry.repo.lowercased()]?.license
+    }
+
+    func loadIndexedCatalog(force:Bool=false) async {
+        guard !indexLoading else { return }
+        indexLoading=true
+        defer { indexLoading=false }
+        let cache=FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/OrbitStore/catalog-index.json")
+        func accept(_ data:Data)->Bool {
+            guard let value=try? JSONDecoder().decode(MacCatalogIndex.self,from:data),
+                  value.schema==1,value.count==value.entries.count,
+                  !value.entries.isEmpty,value.entries.count<=2500 else { return false }
+            // Do not blindly trust malformed external repository identifiers.
+            let items=value.entries.filter { entry in
+                let parts=entry.repo.split(separator:"/")
+                return parts.count==2 && !entry.name.isEmpty &&
+                    entry.name.count<160 && entry.summary.count<=320 &&
+                    !entry.asset_name.isEmpty && !entry.release_tag.isEmpty
+            }
+            guard !items.isEmpty else { return false }
+            indexedApps=items
+            indexByRepo=Dictionary(items.map{($0.repo.lowercased(),$0)},
+                                   uniquingKeysWith:{old,_ in old})
+            indexGeneratedAt=value.generated_at
+            indexStatus="Catalogue indexé : \(items.count) logiciels macOS"
+            return true
+        }
+        if let saved=try? Data(contentsOf:cache) { _=accept(saved) }
+        let timestamp=UserDefaults.standard.object(forKey:"orbit.catalog.checkedAt") as? Date
+        if !force, !indexedApps.isEmpty, let timestamp,
+           Date().timeIntervalSince(timestamp)<6*3600 { return }
+        do {
+            var request=URLRequest(url:indexURL)
+            request.setValue("OrbitStore/0.3 (macOS)",forHTTPHeaderField:"User-Agent")
+            request.timeoutInterval=18
+            let (data,response)=try await URLSession.shared.data(for:request)
+            guard (response as? HTTPURLResponse)?.statusCode==200,accept(data) else {
+                throw StoreError.badResponse
+            }
+            try FileManager.default.createDirectory(at:cache.deletingLastPathComponent(),
+                                                    withIntermediateDirectories:true)
+            try data.write(to:cache,options:.atomic)
+            UserDefaults.standard.set(Date(),forKey:"orbit.catalog.checkedAt")
+        } catch {
+            indexStatus=indexedApps.isEmpty ?
+                "Catalogue initial uniquement (index distant indisponible)" :
+                "Index en cache · rafraîchissement indisponible"
+        }
+    }
+
     @Published var info: [String: RepositoryInfo] = [:]
     @Published var releases: [String: ReleaseInfo] = [:]
     @Published var releaseAvailability: [String: MacReleaseAvailability] = [:]
@@ -192,6 +321,7 @@ final class StoreModel: ObservableObject {
             Task { @MainActor in self?.scan() }
         }
         Task {
+            await loadIndexedCatalog()
             await refresh()
             await loadObsidianCount()
         }
@@ -348,33 +478,34 @@ final class StoreModel: ObservableObject {
 
     func refresh() async {
         guard !busy else { return }
-        busy = true
-        defer { busy = false; status = "Catalogue actualisé" }
-        status = "Actualisation GitHub…"
-        for entry in Inventory.catalog {
+        busy=true
+        defer { busy=false; status="Catalogue actualisé" }
+        status="Chargement du catalogue…"
+        await loadIndexedCatalog(force:true)
+        // The public index already provides stars and descriptions for hundreds
+        // of repos. Fetch details only for a small curated fallback, not every
+        // app on every startup (unauthenticated GitHub limit: 60 req/hour).
+        for entry in Inventory.catalog.prefix(6) where indexByRepo[entry.repo.lowercased()] == nil {
             do {
-                let key = entry.repo.replacingOccurrences(of:"/",with:"_")
-                if let cache = UserDefaults.standard.data(forKey:"repo." + key),
-                   let date = UserDefaults.standard.object(forKey:"repoDate." + key) as? Date,
-                   Date().timeIntervalSince(date) < 7200,
-                   let cached = try? decoder.decode(RepositoryInfo.self,from:cache) {
-                    info[entry.repo] = cached
+                let key=entry.repo.replacingOccurrences(of:"/",with:"_")
+                if let data=UserDefaults.standard.data(forKey:"repo."+key),
+                   let cached=try? decoder.decode(RepositoryInfo.self,from:data) {
+                    info[entry.repo]=cached
                 } else {
-                    let (data, response) = try await github("repos/" + entry.repo)
-                    guard (response as? HTTPURLResponse)?.statusCode == 200 else { continue }
-                    let decoded = try decoder.decode(RepositoryInfo.self,from:data)
-                    info[entry.repo] = decoded
-                    UserDefaults.standard.set(data,forKey:"repo." + key)
-                    UserDefaults.standard.set(Date(),forKey:"repoDate." + key)
+                    let (data,response)=try await github("repos/"+entry.repo)
+                    guard (response as? HTTPURLResponse)?.statusCode==200,
+                          let decoded=try? decoder.decode(RepositoryInfo.self,from:data) else {continue}
+                    info[entry.repo]=decoded
+                    UserDefaults.standard.set(data,forKey:"repo."+key)
                 }
-            } catch { errors[entry.repo] = error.localizedDescription }
+            } catch {}
         }
         await checkUpdates()
     }
 
     func checkUpdates() async {
         status = "Recherche des mises à jour…"
-        let active=Inventory.catalog.filter { !matches($0).isEmpty }
+        let active=catalog.filter { !matches($0).isEmpty }
         for entry in active {
             await checkDownloadAvailability(entry,force:true)
             guard let release=releases[entry.repo],
