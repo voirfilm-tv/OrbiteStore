@@ -42,7 +42,7 @@ enum OrbitSpotlights {
               link:"https://store.steampowered.com/app/413150/",steamID:413150,symbol:"leaf.fill"),
         .init(name:"RimWorld",category:"Jeux",genre:"Gestion",
               subtitle:"Construire, gérer et défendre une colonie",source:"Steam",
-              link:"https://store.steampowered.com/app/294100/",steamID:294100,symbol:"house.lodge.fill")
+              link:"https://store.steampowered.com/app/294100/",steamID:294100,symbol:"house.fill")
     ]
 
     static let office: [OrbitSpotlightApp] = [
@@ -67,38 +67,43 @@ enum OrbitSpotlights {
     ]
 }
 
+private struct OrbitSpotlightGroup: Identifiable {
+    let id: String
+    let apps: [OrbitSpotlightApp]
+}
+
 struct OrbitSpotlightShelf: View {
     let section: String
     let gameGenre: String
 
-    private var groups: [(String, [OrbitSpotlightApp])] {
+    private var groups: [OrbitSpotlightGroup] {
         if section == "Jeux" {
-            return [("Des jeux qui donnent envie",OrbitSpotlights.games.filter {
+            return [.init(id:"Des jeux qui donnent envie",apps:OrbitSpotlights.games.filter {
                 gameGenre == "Tous" || $0.genre == gameGenre
             })]
         }
         if section == "Bureautique" {
-            return [("Les vrais incontournables",OrbitSpotlights.office)]
+            return [.init(id:"Les vrais incontournables",apps:OrbitSpotlights.office)]
         }
-        return [("Jeux incontournables",OrbitSpotlights.games),
-                ("Bureautique au quotidien",OrbitSpotlights.office)]
+        return [.init(id:"Jeux incontournables",apps:OrbitSpotlights.games),
+                .init(id:"Bureautique au quotidien",apps:OrbitSpotlights.office)]
     }
 
     var body: some View {
-        ForEach(groups,id:\.0) { group in
-            if !group.1.isEmpty {
+        ForEach(groups) { group in
+            if !group.apps.isEmpty {
                 VStack(alignment:.leading,spacing:10) {
                     HStack(alignment:.firstTextBaseline) {
-                        Text(group.0).font(.title2.bold())
+                        Text(group.id).font(.title2.bold())
                         Spacer()
                         Text("Sélection éditoriale").font(.caption).foregroundStyle(.secondary)
                     }
                     ScrollView(.horizontal,showsIndicators:false) {
                         LazyHStack(spacing:13) {
-                            ForEach(group.1) { app in
+                            ForEach(group.apps) { app in
                                 Button {
                                     guard let url=app.officialURL,
-                                          ["https"].contains(url.scheme ?? "") else { return }
+                                          url.scheme == "https" else { return }
                                     NSWorkspace.shared.open(url)
                                 } label: {
                                     VStack(alignment:.leading,spacing:8) {
