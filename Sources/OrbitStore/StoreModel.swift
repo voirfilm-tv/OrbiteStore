@@ -94,6 +94,7 @@ struct IndexedMacApp: Decodable, Identifiable {
     let updated_at:String?
     let release_tag:String
     let asset_name:String
+    let audience:String?
     let verified_at:String
     var id:String { repo.lowercased() }
 }
@@ -210,34 +211,76 @@ final class StoreModel: ObservableObject {
     private var indexByRepo:[String:IndexedMacApp] = [:]
     private let indexURL=URL(string:"https://raw.githubusercontent.com/voirfilm-tv/OrbiteStore/main/data/catalog-index.json")!
 
-    // Single catalog for every native view, search match and update check.
-    // Keep curated entries when the remote index is unavailable.
+    // A curated repository is NOT automatically an installable consumer app.
+    // Public mode only accepts GitHub releases with a recognized macOS asset.
+    @Published var developerMode:Bool = UserDefaults.standard.bool(forKey:"orbit.developerMode") {
+        didSet { UserDefaults.standard.set(developerMode,forKey:"orbit.developerMode") }
+    }
+
+    private func installableAssetName(_ name:String)->Bool {
+        let n=name.lowercased()
+        guard !["windows","win32","linux","android","freebsd","openbsd",
+                ".dsym","symbols","source","src-","terminal-only","console-only",
+                "headless","cli-only"].contains(where:n.contains) else { return false }
+        let mac=["macos","mac-","mac_","darwin","osx","apple-silicon",
+                 ".app","universal"].contains(where:n.contains)
+        if n.hasSuffix(".dmg") { return true }
+        if n.hasSuffix(".pkg") || n.hasSuffix(".zip") { return mac }
+        return false
+    }
+
+    private func isPublicApp(_ item:IndexedMacApp)->Bool {
+        guard installableAssetName(item.asset_name) else { return false }
+        if let audience=item.audience { return audience=="consumer" }
+        // Older offline indexes lacked an explicit audience field.
+        // Fail closed on technical project categories and descriptors.
+        if ["Développement","Lanceurs & émulation"].contains(item.category) { return false }
+        let summary=(item.name+" "+item.summary+" "+item.asset_name).lowercased()
+        let markers=["cli tool","terminal-only","console-only","framework",
+                     "developer tool","game engine","game framework","docker",
+                     "kubernetes","self-hosted server","library for","debugger",
+                     ".dsym","command line","ssh client","code editor"]
+        if markers.contains(where:summary.contains) { return false }
+        if item.category=="Réseau" &&
+            !["localsend/localsend","rustdesk/rustdesk"].contains(item.repo.lowercased()) {
+            return false
+        }
+        return true
+    }
+
     var catalog:[CatalogApp] {
-        let verified=Set(indexedApps.map{$0.repo.lowercased()})
-        var curated=Inventory.catalog.filter { entry in
-            let key=entry.repo.lowercased()
-            // When a populated index is available, don't pretend that
-            // unverified games are installable Mac games.
-            if !indexedApps.isEmpty && entry.category=="Jeux" && !verified.contains(key) {
-                return false
+        let curatedLookup=Dictionary(Inventory.catalog.map{($0.repo.lowercased(),$0)},
+                                     uniquingKeysWith:{old,_ in old})
+        if !developerMode {
+            return indexedApps.filter(isPublicApp).map { item in
+                if let curated=curatedLookup[item.repo.lowercased()] {
+                    return CatalogApp(repo:item.repo,name:curated.name,
+                                      category:item.category,icon:curated.icon,
+                                      aliases:curated.aliases)
+                }
+                let symbol=item.category=="Jeux" ? "gamecontroller.fill" :
+                           (item.category=="Multimédia" ? "play.rectangle" : "app.fill")
+                return CatalogApp(repo:item.repo,name:item.name,
+                                  category:item.category,icon:symbol,aliases:[])
             }
-            return true
         }
-        let existing=Set(curated.map{$0.repo.lowercased()})
-        for item in indexedApps where !existing.contains(item.repo.lowercased()) {
-            let symbol=item.category=="Jeux" ? "gamecontroller.fill" :
-                       (item.category=="Lanceurs & émulation" ? "arcade.stick" : "square.stack.3d.up")
-            curated.append(CatalogApp(repo:item.repo,name:item.name,
-                                      category:item.category,icon:symbol,aliases:[]))
+        // Developers can explore the entire index and source-only curated
+        // repositories, but download buttons still require an actual asset.
+        var entries=Inventory.catalog
+        let known=Set(entries.map{$0.repo.lowercased()})
+        for item in indexedApps where !known.contains(item.repo.lowercased()) {
+            entries.append(CatalogApp(repo:item.repo,name:item.name,
+                                      category:item.category,icon:"shippingbox",aliases:[]))
         }
-        // Override stale, manually categorized entries using indexed metadata.
-        return curated.map { entry in
-            guard let indexed=indexByRepo[entry.repo.lowercased()] else { return entry }
-            if entry.category==indexed.category { return entry }
-            return CatalogApp(repo:entry.repo,name:entry.name,category:indexed.category,
+        return entries.map { entry in
+            guard let item=indexByRepo[entry.repo.lowercased()] else { return entry }
+            return CatalogApp(repo:item.repo,name:entry.name,category:item.category,
                               icon:entry.icon,aliases:entry.aliases)
         }
     }
+
+    var publicCatalogCount:Int { indexedApps.filter(isPublicApp).count }
+    var developerCatalogCount:Int { indexedApps.count }
 
     func catalogDescription(_ entry:CatalogApp)->String {
         let value=indexByRepo[entry.repo.lowercased()]?.summary
@@ -250,7 +293,8 @@ final class StoreModel: ObservableObject {
         indexByRepo[entry.repo.lowercased()]?.updated_at ?? ""
     }
     func catalogIsVerifiedMac(_ entry:CatalogApp)->Bool {
-        indexByRepo[entry.repo.lowercased()] != nil
+        guard let item=indexByRepo[entry.repo.lowercased()] else { return false }
+        return installableAssetName(item.asset_name)
     }
     func catalogReleaseTag(_ entry:CatalogApp)->String? {
         indexByRepo[entry.repo.lowercased()]?.release_tag
@@ -284,7 +328,7 @@ final class StoreModel: ObservableObject {
             indexByRepo=Dictionary(items.map{($0.repo.lowercased(),$0)},
                                    uniquingKeysWith:{old,_ in old})
             indexGeneratedAt=value.generated_at
-            indexStatus="Catalogue indexé : \(items.count) logiciels macOS"
+            indexStatus="\(publicCatalogCount) apps grand public · \(items.count) projets indexés"
             return true
         }
         if let saved=try? Data(contentsOf:cache) { _=accept(saved) }
