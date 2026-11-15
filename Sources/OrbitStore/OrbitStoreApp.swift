@@ -42,14 +42,114 @@ struct StoreWindow: View {
     @State private var showingHelp = false
     @StateObject private var discovery = GitHubDiscovery()
     @State private var selectedEcosystem: Ecosystem?
+    @State private var catalogPresence = "Toutes"
+    @State private var catalogSort = "Sélection"
+    @State private var remoteFilter = "Tous"
+    @State private var remoteSort = "Pertinence"
+    @State private var installedScope = "Toutes"
+    @State private var installedSort = "A–Z"
+    @State private var ecosystemScope = "Tous"
+    @State private var ecosystemSort = "A–Z"
+    @State private var updatesScope = "Toutes"
+    @State private var updatesSort = "A–Z"
     private let columns = [GridItem(.adaptive(minimum:218,maximum:300),spacing:14)]
     private var filtered: [CatalogApp] {
-        Inventory.catalog.filter { item in
+        var items=Inventory.catalog.filter { item in
             (search.isEmpty ? (section == "Découvrir" || section == "Tout" || section == item.category) : true)
             && (search.isEmpty || item.name.localizedCaseInsensitiveContains(search)
                 || item.repo.localizedCaseInsensitiveContains(search))
         }
+        if catalogPresence == "Installées" {
+            items=items.filter { !store.matches($0).isEmpty }
+        } else if catalogPresence == "Non installées" {
+            items=items.filter { store.matches($0).isEmpty }
+        }
+        if catalogSort == "Nom A–Z" {
+            items.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        } else if catalogSort == "★ GitHub" {
+            items.sort { (store.info[$0.repo]?.stargazers_count ?? -1) >
+                         (store.info[$1.repo]?.stargazers_count ?? -1) }
+        }
+        return items
     }
+
+    private var visibleGitHubHits: [GitHubHit] {
+        var items=discovery.results
+        if remoteFilter == "Avec licence" {
+            items=items.filter {
+                guard let license=$0.license?.spdx_id else { return false }
+                return license != "NOASSERTION"
+            }
+        } else if remoteFilter == "≥ 100 étoiles" {
+            items=items.filter { $0.stargazers_count >= 100 }
+        } else if remoteFilter == "≥ 1 000 étoiles" {
+            items=items.filter { $0.stargazers_count >= 1000 }
+        } else if remoteFilter == "Installées" {
+            items=items.filter {
+                !store.matches(CatalogApp(repo:$0.full_name,name:$0.name,
+                    category:"GitHub",icon:"shippingbox",aliases:[])).isEmpty
+            }
+        }
+        if remoteSort == "★ GitHub" {
+            items.sort { $0.stargazers_count > $1.stargazers_count }
+        } else if remoteSort == "Nom A–Z" {
+            items.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        }
+        return items
+    }
+
+    private var visibleInstalled: [MacApp] {
+        var items=store.installed
+        if installedScope == "Extensions connues" {
+            items=items.filter { !Ecosystems.matches($0.name).isEmpty }
+        } else if installedScope == "Autres applications" {
+            items=items.filter { Ecosystems.matches($0.name).isEmpty }
+        } else if installedScope == "Système" {
+            items=items.filter { $0.path.hasPrefix("/System/Applications") }
+        }
+        if installedSort == "Z–A" {
+            items.sort { $0.name.localizedStandardCompare($1.name) == .orderedDescending }
+        } else {
+            items.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        }
+        return items
+    }
+
+    private var visibleEcosystems: [Ecosystem] {
+        var items=Ecosystems.all
+        if ecosystemScope == "Logiciels installés" {
+            items=items.filter { item in
+                store.installed.contains { app in Ecosystems.matches(app.name).contains(where: { $0.id == item.id }) }
+            }
+        } else if ecosystemScope == "Registres officiels" {
+            items=items.filter { $0.id == "obsidian" || $0.id == "jellyfin" }
+        } else if ecosystemScope == "Découverte GitHub" {
+            items=items.filter { $0.id != "obsidian" && $0.id != "jellyfin" }
+        }
+        if ecosystemSort == "A–Z" {
+            items.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        } else if ecosystemSort == "Nombre recensé" {
+            items.sort { (store.extensionCount[$0.id] ?? -1) > (store.extensionCount[$1.id] ?? -1) }
+        }
+        return items
+    }
+
+    private var visibleUpdates: [CatalogApp] {
+        var items=Inventory.catalog.filter { !store.matches($0).isEmpty }
+        if updatesScope == "Disponibles" {
+            items=items.filter { store.updateAvailable($0) }
+        } else if updatesScope == "Non vérifiées" {
+            items=items.filter { store.releases[$0.repo] == nil }
+        }
+        if updatesSort == "A–Z" {
+            items.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        } else if updatesSort == "★ GitHub" {
+            items.sort { (store.info[$0.repo]?.stargazers_count ?? 0) >
+                         (store.info[$1.repo]?.stargazers_count ?? 0) }
+        }
+        return items
+    }
+
     var body: some View {
         NavigationSplitView {
             List(selection:$section) {
