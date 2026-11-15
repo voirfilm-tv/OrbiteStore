@@ -32,10 +32,12 @@ struct StoreWindow: View {
     @State private var selected: CatalogApp?
     @State private var selectedInstalled: MacApp?
     @State private var showingHelp = false
+    @StateObject private var discovery = GitHubDiscovery()
+    @State private var selectedEcosystem: Ecosystem?
     private let columns = [GridItem(.adaptive(minimum:218,maximum:300),spacing:14)]
     private var filtered: [CatalogApp] {
         Inventory.catalog.filter { item in
-            (section == "Découvrir" || section == "Tout" || section == item.category)
+            (search.isEmpty ? (section == "Découvrir" || section == "Tout" || section == item.category) : true)
             && (search.isEmpty || item.name.localizedCaseInsensitiveContains(search)
                 || item.repo.localizedCaseInsensitiveContains(search))
         }
@@ -74,12 +76,16 @@ struct StoreWindow: View {
         } detail: {
             ScrollView {
                 VStack(alignment:.leading,spacing:22) {
-                    switch section {
-                    case "Installées": installedPage
-                    case "Écosystèmes": ecosystemsPage
-                    case "Mises à jour": updatesPage
-                    case "Préférences": PreferencesPanel()
-                    default: catalogPage
+                    if !search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        searchPage
+                    } else {
+                        switch section {
+                        case "Installées": installedPage
+                        case "Écosystèmes": ecosystemsPage
+                        case "Mises à jour": updatesPage
+                        case "Préférences": PreferencesPanel()
+                        default: catalogPage
+                        }
                     }
                     HStack {
                         Text(store.status).foregroundStyle(.secondary).font(.caption)
@@ -93,7 +99,7 @@ struct StoreWindow: View {
                 .frame(maxWidth:.infinity)
             }
             .background(Color(nsColor:.windowBackgroundColor))
-            .searchable(text:$search,placement:.toolbar,prompt:"Rechercher un logiciel")
+            .searchable(text:$search,placement:.toolbar,prompt:"Rechercher sur GitHub et OrbitStore")
             .toolbar {
                 ToolbarItemGroup(placement:.primaryAction) {
                     if store.busy { ProgressView().controlSize(.small) }
@@ -110,6 +116,14 @@ struct StoreWindow: View {
         .sheet(item:$selectedInstalled) { app in
             InstalledDetails(app:app).environmentObject(store)
         }
+        .sheet(item:$selectedEcosystem) { ecosystem in
+            ExtensionBrowser(ecosystem:ecosystem)
+        }
+        .task(id:search) {
+            try? await Task.sleep(nanoseconds: 550_000_000)
+            guard !Task.isCancelled else { return }
+            await discovery.search(search)
+        }
     }
 
     private func icon(for category:String)->String {
@@ -121,6 +135,14 @@ struct StoreWindow: View {
         case "Sécurité": return "lock.shield"
         case "Réseau": return "network"
         case "Utilitaires": return "wrench.and.screwdriver"
+        case "Jeux": return "gamecontroller"
+        case "Audio & musique": return "music.note"
+        case "Éducation": return "graduationcap"
+        case "Graphisme": return "paintbrush"
+        case "Internet": return "globe"
+        case "Bureautique": return "doc.text"
+        case "Accessibilité": return "accessibility"
+        case "Personnalisation": return "slider.horizontal.3"
         default: return "square.grid.2x2"
         }
     }
