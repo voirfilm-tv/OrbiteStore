@@ -358,17 +358,18 @@ final class StoreModel: ObservableObject {
 
     func checkUpdates() async {
         status = "Recherche des mises à jour…"
-        let active = Inventory.catalog.filter { !matches($0).isEmpty }
+        let active=Inventory.catalog.filter { !matches($0).isEmpty }
         for entry in active {
-            do {
-                let (data, response) = try await github("repos/" + entry.repo + "/releases/latest")
-                guard (response as? HTTPURLResponse)?.statusCode == 200 else { continue }
-                let release = try decoder.decode(ReleaseInfo.self,from:data)
-                releases[entry.repo] = release
-                if autoDownload && isNewer(release.tag_name,than:matches(entry).first?.version ?? "?") {
-                    await download(entry,release:release)
-                }
-            } catch { errors[entry.repo] = error.localizedDescription }
+            await checkDownloadAvailability(entry,force:true)
+            guard let release=releases[entry.repo],
+                  isNewer(release.tag_name,than:matches(entry).first?.version ?? "?") else { continue }
+            // Never auto-download for a display-name-only match. A renamed
+            // unrelated app must not be offered a foreign binary automatically.
+            if let known=knownBundleIDs[entry.repo.lowercased()],
+               matches(entry).contains(where: { $0.bundleID.caseInsensitiveCompare(known) == .orderedSame }),
+               autoDownload {
+                await download(entry,release:release)
+            }
         }
         status = "Vérification terminée"
     }
