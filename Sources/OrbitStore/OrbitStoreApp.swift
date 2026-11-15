@@ -638,6 +638,9 @@ struct StoreWindow: View {
                 if !store.matches(entry).isEmpty {
                     Image(systemName:"checkmark.circle.fill").foregroundStyle(.green)
                         .help("Installée sur ce Mac")
+                } else {
+                    Image(systemName:"arrow.up.right").font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
             }
             Text(entry.name).font(.headline).lineLimit(1)
@@ -657,11 +660,25 @@ struct StoreWindow: View {
                     Text("GitHub").font(.caption2).foregroundStyle(.secondary)
                 }
             }
+            Spacer(minLength:5)
+            HStack(spacing:7) {
+                Image(systemName:"sparkles")
+                Text("Voir la fiche").fontWeight(.semibold)
+                Spacer()
+                if let version=store.catalogReleaseTag(entry) {
+                    Text(version).lineLimit(1).foregroundStyle(.secondary)
+                }
+            }
+            .font(.caption2).foregroundStyle(.indigo)
         }
         .padding(17)
-        .frame(maxWidth:.infinity,minHeight:191,alignment:.topLeading)
-        .background(Color(nsColor:.controlBackgroundColor),in:RoundedRectangle(cornerRadius:19))
-        .overlay(RoundedRectangle(cornerRadius:19).stroke(.primary.opacity(0.055)))
+        .frame(maxWidth:.infinity,minHeight:211,alignment:.topLeading)
+        .background(
+            LinearGradient(colors:[Color(nsColor:.controlBackgroundColor),
+                                   Color.indigo.opacity(0.045)],
+                           startPoint:.topLeading,endPoint:.bottomTrailing),
+            in:RoundedRectangle(cornerRadius:19))
+        .overlay(RoundedRectangle(cornerRadius:19).stroke(.primary.opacity(0.07)))
     }
 
     private var installedPage: some View {
