@@ -61,6 +61,21 @@ SEARCHES = [
     ("Multimédia", "topic:macos topic:video stars:>100 archived:false"),
     ("Sécurité", "topic:macos topic:security stars:>100 archived:false"),
     ("Réseau", "topic:macos topic:network stars:>100 archived:false"),
+    ("Productivité", "topic:macos topic:clipboard-manager stars:>30 archived:false"),
+    ("Productivité", "topic:macos topic:task-manager stars:>80 archived:false"),
+    ("Productivité", "topic:macos topic:launcher stars:>120 archived:false"),
+    ("Graphisme", "image editor macOS download in:description stars:>100 archived:false"),
+    ("Création", "video editor macos in:description stars:>100 archived:false"),
+    ("Audio & musique", "topic:audio-editor topic:macos stars:>100 archived:false"),
+    ("Multimédia", "topic:media-player topic:macos stars:>100 archived:false"),
+    ("Éducation", "topic:flashcards topic:macos stars:>70 archived:false"),
+    ("Sécurité", "topic:password-manager topic:macos stars:>100 archived:false"),
+    ("Réseau", "topic:file-transfer topic:macos stars:>100 archived:false"),
+    ("Internet", "topic:email-client topic:macos stars:>100 archived:false"),
+    ("Utilitaires", "topic:window-manager topic:macos stars:>100 archived:false"),
+    ("Utilitaires", "macos menu bar app in:description stars:>100 archived:false"),
+    ("Personnalisation", "topic:macos topic:menubar stars:>50 archived:false"),
+    ("Accessibilité", "topic:macos topic:mouse stars:>50 archived:false"),
     ("Bureautique", "topic:macos topic:notes stars:>100 archived:false"),
     ("Bureautique", "topic:macos topic:office stars:>100 archived:false"),
     ("Bureautique", "topic:markdown-editor topic:macos stars:>100 archived:false"),
@@ -90,6 +105,16 @@ FEATURED_REPOS = {
     "supertux/supertux":114, "freeorion/freeorion":112,
     "beyond-all-reason/beyond-all-reason":111,
     "drwhut/tabletop-club":105, "yairm210/unciv":106,
+    "p0deje/maccy":116, "rxhanson/rectangle":118,
+    "alienator88/pearcleaner":113, "jordanbaird/ice":114,
+    "monitorcontrol/monitorcontrol":108,
+    "transmission/transmission":108,
+    "iterate-ch/cyberduck":105,
+    "espanso/espanso":110,
+    "desktop/desktop":110,
+    "usebruno/bruno":111,
+    "bitwarden/clients":111,
+    "signalapp/signal-desktop":107,
     "hedgewars/hw":110, "openrct2/openrct2":105,
     "ddnet/ddnet":103, "ppy/osu":99,
     "iina/iina":115, "handbrake/handbrake":113,
@@ -127,6 +152,14 @@ GAME_GENRES = {
 # Explicit reviewed path: unlike README badges, this is a real app icon.
 ICON_PATH_HINTS = {
     "supertuxkart/stk-code":"data/supertuxkart_512.png",
+    "obsproject/obs-studio":"frontend/cmake/macos/Assets.xcassets/AppIcon.appiconset/icon_512x512.png",
+    "p0deje/maccy":"Maccy/Assets.xcassets/AppIcon.appiconset/AppIcon (Big Sur)-512w.png",
+    "rxhanson/rectangle":"Rectangle/Assets.xcassets/AppIcon.appiconset/mac512pts2x.png",
+    "upscayl/upscayl":"resources/icons/512x512.png",
+    "jgraph/drawio-desktop":"build/icon.png",
+    "kde/krita":"krita/pics/branding/default/512-apps-krita.png",
+    "appflowy-io/appflowy":"frontend/appflowy_flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/512.png",
+    "laurent22/joplin":"packages/app-desktop/build/icons/512x512.png",
 }
 MAX_ICON_SCANS = 36
 ICON_RECHECK_DAYS = 35
@@ -185,6 +218,10 @@ def score_icon_path(path: str, display_name: str) -> int:
         score += 20
     if lower.startswith(("data/", "assets/", "resources/", "res/")):
         score += 14
+    if "/ios/" in lower or "/android/" in lower or "/windows/" in lower:
+        score -= 80
+    if "/macos/" in lower or "/mac/" in lower or ".appiconset/" in lower:
+        score += 28
     if filename in ("icon.png", "logo.png") and path.count("/") > 2:
         score -= 30
     return score if score >= 55 else -1
@@ -276,7 +313,9 @@ def classify_audience(repo: dict, category: str, asset: str) -> str:
     if category == "Lanceurs & émulation":
         return "developer"
     if category == "Réseau" and key not in {
-        "localsend/localsend", "rustdesk/rustdesk"
+        "localsend/localsend", "rustdesk/rustdesk",
+        "tailscale/tailscale", "qbittorrent/qbittorrent",
+        "transmission/transmission", "iterate-ch/cyberduck",
     }:
         return "developer"
     return "consumer"
@@ -582,6 +621,16 @@ def main() -> int:
     seeded_first = sorted(canonical.values(), key=lambda e:(
         e["repo"].casefold() not in seeds, -int(e.get("editorial_rank") or 0)))
     for item in seeded_first:
+        hinted_path = ICON_PATH_HINTS.get(item["repo"].casefold())
+        if hinted_path:
+            branch_name = item.get("default_branch") or "main"
+            item["icon_url"] = (
+                "https://raw.githubusercontent.com/" + item["repo"] + "/" +
+                urllib.parse.quote(branch_name, safe="") + "/" +
+                urllib.parse.quote(hinted_path, safe="/")
+            )
+            item["icon_checked_at"] = NOW.isoformat()
+            continue
         old = previous.get(item["repo"].casefold(), {})
         item["icon_url"] = item.get("icon_url") or old.get("icon_url")
         item["icon_checked_at"] = item.get("icon_checked_at") or old.get("icon_checked_at")
